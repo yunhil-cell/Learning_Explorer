@@ -236,6 +236,15 @@
                                 <p class="text-gray-400 mb-4">새로운 퀘스트를 기다리는 중...</p>
                             </div>
                         </div>
+                        <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
+                                <i class="fa-solid fa-clipboard-check text-emerald-400"></i>
+                                <span>완료한 퀘스트 목록</span>
+                            </h3>
+                            <div id="completed-quests-container">
+                                <p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 5.3. Growth Log Section -->
@@ -512,8 +521,8 @@
 
                     if (studentDataCache.exp >= expToNextLevel) {
                         const newLevel = studentDataCache.level + 1;
-                        const newExp = studentDataCache.exp - expToNextLevel;
-                        const newGrowthPoints = studentDataCache.growth_points + 5;
+                        const newExp = studentData.exp - expToNextLevel;
+                        const newGrowthPoints = studentData.growth_points + 5;
 
                         updateDoc(studentDocRef, {
                             level: newLevel,
@@ -521,7 +530,7 @@
                             growth_points: newGrowthPoints
                         }).then(() => {
                             showMessageModal('레벨업!', `축하합니다! 레벨 ${newLevel}이 되었습니다! 성장 포인트 5점을 얻었습니다.`);
-                            logEvent('level_up', {
+                            logEvent(userId, 'level_up', {
                                 newLevel: newLevel
                             });
                         }).catch(error => {
@@ -640,19 +649,19 @@
         }
 
         /**
-         * Renders the student's daily quest status and manages it.
+         * Renders the student's daily quest status and completed quests.
          * @param {Object} studentData - The student's data from Firestore.
          */
         function renderQuest(studentData) {
-            const questContainer = document.getElementById('daily-quest-container');
+            const dailyQuestContainer = document.getElementById('daily-quest-container');
+            const completedQuestsContainer = document.getElementById('completed-quests-container');
             const dailyQuestId = 'daily_diary_quest';
-            const questCompletedDate = studentData.quests?.[dailyQuestId]?.completed_at;
+            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at;
             const today = new Date().toISOString().split('T')[0];
 
-            questContainer.innerHTML = '';
-
-            const isCompletedToday = questCompletedDate && questCompletedDate.startsWith(today);
-
+            // Render Daily Quest
+            dailyQuestContainer.innerHTML = '';
+            const isCompletedToday = questCompletedAt && questCompletedAt.toDate().toISOString().split('T')[0] === today;
             if (isCompletedToday) {
                 const card = document.createElement('div');
                 card.className = 'bg-gray-700 rounded-lg p-4 flex items-center justify-between';
@@ -663,7 +672,7 @@
                     </div>
                     <i class="fa-solid fa-check-circle text-2xl text-emerald-400"></i>
                 `;
-                questContainer.appendChild(card);
+                dailyQuestContainer.appendChild(card);
             } else {
                 const card = document.createElement('div');
                 card.className = 'bg-gray-700 rounded-lg p-4 space-y-4';
@@ -672,8 +681,35 @@
                     <p class="text-gray-300">오늘 있었던 일을 간단히 기록해 보세요. 경험치 +50, 성장 포인트 +1</p>
                     <button id="complete-quest-btn" class="w-full p-2 rounded-lg text-white font-semibold btn-primary">퀘스트 완료</button>
                 `;
-                questContainer.appendChild(card);
+                dailyQuestContainer.appendChild(card);
                 document.getElementById('complete-quest-btn').addEventListener('click', handleQuestCompletion);
+            }
+
+            // Render Completed Quests
+            completedQuestsContainer.innerHTML = '';
+            if (studentData.quests) {
+                const completedQuests = Object.entries(studentData.quests).filter(([key, value]) => value.completed_at);
+                if (completedQuests.length > 0) {
+                    completedQuests.sort((a, b) => b[1].completed_at.toDate() - a[1].completed_at.toDate());
+                    completedQuests.forEach(([key, value]) => {
+                        const questCard = document.createElement('div');
+                        questCard.className = 'bg-gray-700 rounded-lg p-3 shadow-sm';
+                        const questName = key === dailyQuestId ? "오늘의 일기 쓰기" : key;
+                        const date = value.completed_at.toDate().toLocaleDateString();
+                        questCard.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <p class="text-gray-300 font-semibold">${questName}</p>
+                                <p class="text-sm text-emerald-400">완료</p>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">${date}에 완료됨</p>
+                        `;
+                        completedQuestsContainer.appendChild(questCard);
+                    });
+                } else {
+                    completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
+                }
+            } else {
+                completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
             }
         }
 
@@ -684,8 +720,7 @@
         function renderGrowthLogSubmissionForm(studentData) {
             const statusContainer = document.getElementById('growth-log-status');
             const submissionForm = document.getElementById('growth-log-form');
-            const latestLogId = studentData.latest_log;
-
+            
             // Check if a growth log was already submitted today
             const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
             const todayStart = new Date();
@@ -699,8 +734,26 @@
                 if (!querySnapshot.empty) {
                     submissionForm.classList.add('hidden');
                     statusContainer.classList.remove('hidden');
-                    statusContainer.innerHTML = `<i class="fa-solid fa-calendar-check text-emerald-400 mr-2"></i>오늘의 성장일지를 이미 제출했습니다. 내일 다시 도전하세요!`;
-                    statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-emerald-900 text-emerald-300';
+                    const logData = querySnapshot.docs[0].data();
+                    let statusText = '';
+                    let statusColor = '';
+
+                    switch (logData.status) {
+                        case 'pending':
+                            statusText = `<i class="fa-solid fa-hourglass-half text-yellow-400 mr-2"></i>승인 대기 중...`;
+                            statusColor = 'bg-yellow-900 text-yellow-300';
+                            break;
+                        case 'approved':
+                            statusText = `<i class="fa-solid fa-check-circle text-emerald-400 mr-2"></i>오늘의 성장일지 최고!`;
+                            statusColor = 'bg-emerald-900 text-emerald-300';
+                            break;
+                        case 'rejected':
+                            statusText = `<i class="fa-solid fa-times-circle text-red-400 mr-2"></i>오늘의 성장일지가 확인되었습니다. 다시 작성해 보세요.`;
+                            statusColor = 'bg-red-900 text-red-300';
+                            break;
+                    }
+                    statusContainer.innerHTML = statusText;
+                    statusContainer.className = `mt-4 p-4 rounded-lg text-center font-semibold ${statusColor}`;
                 } else {
                     submissionForm.classList.remove('hidden');
                     statusContainer.classList.add('hidden');
@@ -708,48 +761,6 @@
             }).catch(error => {
                 console.error("Error checking for existing log:", error);
             });
-            
-            // This part handles the status of the latest submission
-            if (latestLogId) {
-                const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, latestLogId);
-                onSnapshot(logDocRef, (logSnap) => {
-                    if (logSnap.exists()) {
-                        const logData = logSnap.data();
-                        
-                        // Check if the log was submitted today
-                        const logDate = logData.timestamp.toDate();
-                        const today = new Date();
-                        if (logDate.getDate() === today.getDate() && logDate.getMonth() === today.getMonth() && logDate.getFullYear() === today.getFullYear()) {
-                            if (logData.status === 'pending') {
-                                submissionForm.classList.add('hidden');
-                                statusContainer.classList.remove('hidden');
-                                statusContainer.innerHTML = `<i class="fa-solid fa-hourglass-half text-yellow-400 mr-2"></i>승인 대기 중...`;
-                                statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-yellow-900 text-yellow-300';
-                            } else if (logData.status === 'approved') {
-                                submissionForm.classList.add('hidden');
-                                statusContainer.classList.remove('hidden');
-                                statusContainer.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400 mr-2"></i>성장일지 최고!`;
-                                statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-emerald-900 text-emerald-300';
-                            } else if (logData.status === 'rejected') {
-                                submissionForm.classList.add('hidden');
-                                statusContainer.classList.remove('hidden');
-                                statusContainer.innerHTML = `<i class="fa-solid fa-times-circle text-red-400 mr-2"></i>성장일지가 확인되었습니다. 다시 작성해 보세요.`;
-                                statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-red-900 text-red-300';
-                            }
-                        } else {
-                            submissionForm.classList.remove('hidden');
-                            statusContainer.classList.add('hidden');
-                        }
-                    } else {
-                        // Log document was deleted, show the form again
-                        submissionForm.classList.remove('hidden');
-                        statusContainer.classList.add('hidden');
-                    }
-                });
-            } else {
-                submissionForm.classList.remove('hidden');
-                statusContainer.classList.add('hidden');
-            }
         }
         
         /**
@@ -782,37 +793,23 @@
                         });
                         const formattedDate = date.toLocaleDateString('ko-KR');
 
-                        let iconClass = '';
-                        let message = '';
-                        let colorClass = 'text-gray-300';
+                        let statusBadge = '';
+                        let contentColorClass = 'text-gray-300';
 
-                        switch (logData.status) {
-                            case 'approved':
-                                iconClass = 'fa-solid fa-check-circle';
-                                message = `성장일지: "${logData.content}"`;
-                                colorClass = 'text-emerald-400';
-                                break;
-                            case 'rejected':
-                                iconClass = 'fa-solid fa-times-circle';
-                                message = `성장일지: "${logData.content}"`;
-                                colorClass = 'text-red-400';
-                                break;
-                            case 'pending':
-                                iconClass = 'fa-solid fa-hourglass-half';
-                                message = `성장일지: "${logData.content}" (승인 대기 중)`;
-                                colorClass = 'text-yellow-400';
-                                break;
-                            default:
-                                iconClass = 'fa-solid fa-info-circle';
-                                message = logData.content;
+                        if (logData.status === 'approved') {
+                            statusBadge = `<span class="bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full">최고</span>`;
+                        } else if (logData.status === 'rejected') {
+                            statusBadge = `<span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">확인</span>`;
+                        } else {
+                            statusBadge = `<span class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">대기 중</span>`;
                         }
 
                         logEntry.innerHTML = `
-                            <div class="flex items-center space-x-2">
-                                <i class="${iconClass} text-lg ${colorClass}"></i>
-                                <p class="text-sm ${colorClass}">${message}</p>
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm text-gray-400">${formattedDate}</p>
+                                ${statusBadge}
                             </div>
-                            <p class="text-right text-xs text-gray-400">${formattedDate} ${formattedTime}</p>
+                            <p class="${contentColorClass}">${logData.content}</p>
                         `;
                         logContainer.appendChild(logEntry);
                     });
@@ -825,13 +822,14 @@
         
         /**
          * Logs an event to the student's growth log.
+         * @param {string} studentId - The ID of the student.
          * @param {string} eventType - The type of event.
          * @param {object} details - Details of the event.
          */
-        async function logEvent(eventType, details) {
-            if (!userId) return;
+        async function logEvent(studentId, eventType, details) {
+            if (!studentId) return;
             try {
-                const logCollectionRef = collection(db, `artifacts/${appId}/public/data/students/${userId}/log`);
+                const logCollectionRef = collection(db, `artifacts/${appId}/public/data/students/${studentId}/log`);
                 await addDoc(logCollectionRef, {
                     event_type: eventType,
                     details: details,
@@ -856,11 +854,11 @@
 
             const studentData = docSnap.data();
             const dailyQuestId = 'daily_diary_quest';
-            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at?.toDate();
+            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at;
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            if (questCompletedAt && questCompletedAt >= today) {
+            if (questCompletedAt && questCompletedAt.toDate() >= today) {
                 showMessageModal('퀘스트 완료', '오늘의 퀘스트는 이미 완료했습니다.');
                 return;
             }
@@ -877,7 +875,7 @@
                     [`quests.${dailyQuestId}.completed_at`]: serverTimestamp()
                 });
                 showMessageModal('퀘스트 성공', '오늘의 퀘스트를 완료하고 보상을 받았습니다!');
-                logEvent('quest_complete', {
+                logEvent(userId, 'quest_complete', {
                     quest_name: "오늘의 일기 쓰기",
                     exp_gain: expGain,
                     growth_point_gain: growthPointGain
