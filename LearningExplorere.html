@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배움 원정대</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firestore 디버그 로깅 활성화
+        setLogLevel('debug');
+
+        // Firestore 보안 규칙에 따른 앱 ID와 사용자 ID 설정
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        let db, auth, userId;
+
+        // 로컬에서 실행할 때를 위한 더미 Firebase 설정
+        const localFirebaseConfig = {
+            apiKey: "dummy-api-key",
+            authDomain: "dummy-project.firebaseapp.com",
+            projectId: "dummy-project",
+            storageBucket: "dummy-project.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef1234567890"
+        };
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : JSON.stringify(localFirebaseConfig));
+
+        // Firebase 초기화 및 인증 상태 관리
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // 인증 상태 변경 리스너
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Authenticated with user ID:", userId);
+                        // 인증이 완료되면 메인 페이지 로직 실행
+                        setupPageListeners();
+                    } else {
+                        userId = crypto.randomUUID();
+                        console.log("No user authenticated, using random ID:", userId);
+                        // 익명 로그인 시도
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                showMessageBox("파이어베이스 초기화에 실패했습니다. 콘솔을 확인해주세요.");
+            }
+        }
+
+        // 페이지 네비게이션 함수
+        const pages = ['landing', 'student-login', 'student-register', 'teacher-login', 'student-dashboard', 'teacher-dashboard'];
+        function showPage(pageId) {
+            pages.forEach(id => {
+                const page = document.getElementById(id + '-page');
+                if (page) {
+                    page.style.display = (id === pageId) ? 'block' : 'none';
+                }
+            });
+        }
+        
+        // 메시지 박스 관련 함수
+        function showMessageBox(message) {
+            const msgBox = document.getElementById('message-box');
+            const msgText = document.getElementById('message-text');
+            msgText.textContent = message;
+            msgBox.classList.remove('hidden');
+        }
+
+        document.getElementById('close-message-box').addEventListener('click', () => {
+            document.getElementById('message-box').classList.add('hidden');
+        });
+
+        // --- 로그인 및 회원가입 로직 ---
+
+        // 회원가입
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const studentId = form.elements['register-id'].value.trim();
+            const password = form.elements['register-password'].value.trim();
+            const characterName = form.elements['register-character-name'].value.trim();
+            const grade = form.elements['register-grade'].value.trim();
+            const studentClass = form.elements['register-class'].value.trim();
+            const studentNumber = form.elements['register-number'].value.trim();
+            const name = form.elements['register-name'].value.trim();
+
+            if (!grade || !studentClass || !studentNumber || !name || !studentId || !password || !characterName) {
+                showMessageBox("모든 필드를 채워주세요.");
+                return;
+            }
+            
+            if (password.length < 4) {
+                showMessageBox("비밀번호는 최소 4자 이상이어야 합니다.");
+                return;
+            }
+
+            // 아이디 중복 검사
+            try {
+                // register 컬렉션은 개인 데이터이므로 users/{userId} 경로 사용
+                const registerRef = collection(db, `artifacts/${appId}/users/${userId}/register`);
+                // students 컬렉션은 공용 데이터이므로 public/data 경로 사용
+                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+                
+                const [registerDocs, studentsDocs] = await Promise.all([getDocs(registerRef), getDocs(studentsRef)]);
+                
+                const isIdTaken = registerDocs.docs.some(doc => doc.data().아이디 === studentId) ||
+                                  studentsDocs.docs.some(doc => doc.data().아이디 === studentId);
+
+                if (isIdTaken) {
+                    showMessageBox("이미 존재하는 아이디입니다. 다른 아이디를 사용해주세요.");
+                    return;
+                }
+                
+                // Firestore에 등록
+                // 문서를 추가할 때, 기획서의 register 시트 헤더를 필드명으로 사용
+                const docRef = doc(registerRef, studentId);
+                await setDoc(docRef, {
+                    학년: grade,
+                    반: studentClass,
+                    번호: studentNumber,
+                    이름: name,
+                    아이디: studentId,
+                    비밀번호: password,
+                    캐릭터_이름: characterName,
+                });
+
+                showMessageBox("가입 신청이 접수되었습니다. 승인 후 로그인할 수 있습니다.");
+                showPage('landing');
+
+            } catch (error) {
+                console.error("회원가입 중 오류 발생:", error);
+                showMessageBox("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
+            }
+        });
+
+        // 학생 로그인
+        document.getElementById('student-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const studentId = form.elements['student-login-id'].value.trim();
+            const password = form.elements['student-login-password'].value.trim();
+
+            try {
+                // students 컬렉션에서 학생 정보 확인
+                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+                const studentDocs = await getDocs(studentsRef);
+                
+                // 시트처럼 모든 문서를 가져와서 조건에 맞는 문서 찾기
+                const student = studentDocs.docs.find(doc => doc.data().아이디 === studentId && doc.data().비밀번호 === password);
+
+                if (student) {
+                    showMessageBox("로그인 성공!");
+                    showPage('student-dashboard');
+                } else {
+                    showMessageBox("아이디 또는 비밀번호가 올바르지 않습니다.");
+                }
+            } catch (error) {
+                console.error("학생 로그인 중 오류 발생:", error);
+                showMessageBox("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+            }
+        });
+
+        // 교사 로그인
+        document.getElementById('teacher-login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const code = form.elements['teacher-code'].value.trim();
+            const teacherCode = "superteacher"; // 기획서에 명시된 코드
+
+            if (code === teacherCode) {
+                showMessageBox("교사 로그인 성공!");
+                showPage('teacher-dashboard');
+            } else {
+                showMessageBox("코드가 올바르지 않습니다.");
+            }
+        });
+
+        // UI 이벤트 리스너 설정
+        function setupPageListeners() {
+            document.getElementById('student-login-btn').addEventListener('click', () => showPage('student-login'));
+            document.getElementById('student-register-btn').addEventListener('click', () => showPage('student-register'));
+            document.getElementById('teacher-login-btn').addEventListener('click', () => showPage('teacher-login'));
+            
+            // 모든 페이지에 뒤로가기 버튼 기능 추가
+            document.querySelectorAll('.back-button').forEach(button => {
+                button.addEventListener('click', () => showPage('landing'));
+            });
+            
+            // 초기 페이지 표시
+            showPage('landing');
+        }
+
+        // 앱 시작
+        initializeFirebase();
+
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 md:p-8">
+
+    <!-- Message Box -->
+    <div id="message-box" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <p id="message-text" class="text-gray-800 mb-4 font-medium"></p>
+            <button id="close-message-box" class="w-full bg-indigo-500 text-white py-2 rounded-lg hover:bg-indigo-600 transition-colors">확인</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-6 md:p-10 bg-white shadow-2xl rounded-lg max-w-2xl w-full">
+
+        <!-- Landing Page -->
+        <div id="landing-page" class="page">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-center mb-4 text-indigo-600">배움 원정대</h1>
+            <p class="text-center text-gray-600 mb-10">
+                “배움 원정대에 오신 것을 환영합니다.”
+            </p>
+            <div class="flex flex-col space-y-4">
+                <button id="student-login-btn" class="bg-indigo-500 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-indigo-600 transition-transform transform hover:scale-105">
+                    학생 로그인
+                </button>
+                <button id="student-register-btn" class="bg-purple-500 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-purple-600 transition-transform transform hover:scale-105">
+                    학생 회원가입
+                </button>
+                <button id="teacher-login-btn" class="bg-teal-500 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-teal-600 transition-transform transform hover:scale-105">
+                    교사 로그인
+                </button>
+            </div>
+        </div>
+
+        <!-- Student Login Page -->
+        <div id="student-login-page" class="page hidden">
+            <h2 class="text-3xl font-bold text-center mb-6 text-indigo-600">학생 로그인</h2>
+            <form id="student-login-form" class="space-y-4">
+                <input type="text" id="student-login-id" placeholder="아이디" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <input type="password" id="student-login-password" placeholder="비밀번호" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <button type="submit" class="w-full bg-indigo-500 text-white font-bold py-3 rounded-lg hover:bg-indigo-600 transition-colors">로그인</button>
+                <button type="button" class="back-button w-full bg-gray-300 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-400 transition-colors">뒤로가기</button>
+            </form>
+        </div>
+
+        <!-- Student Register Page -->
+        <div id="student-register-page" class="page hidden">
+            <h2 class="text-3xl font-bold text-center mb-6 text-purple-600">학생 회원가입</h2>
+            <form id="register-form" class="space-y-4">
+                <input type="text" name="register-grade" placeholder="학년" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <input type="text" name="register-class" placeholder="반" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <input type="text" name="register-number" placeholder="번호" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <input type="text" name="register-name" placeholder="이름" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <input type="text" name="register-id" placeholder="아이디" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <input type="password" name="register-password" placeholder="비밀번호 (최소 4자)" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <input type="text" name="register-character-name" placeholder="캐릭터 이름" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <button type="submit" class="w-full bg-purple-500 text-white font-bold py-3 rounded-lg hover:bg-purple-600 transition-colors">신청</button>
+                <button type="button" class="back-button w-full bg-gray-300 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-400 transition-colors">뒤로가기</button>
+            </form>
+        </div>
+
+        <!-- Teacher Login Page -->
+        <div id="teacher-login-page" class="page hidden">
+            <h2 class="text-3xl font-bold text-center mb-6 text-teal-600">교사 로그인</h2>
+            <form id="teacher-login-form" class="space-y-4">
+                <input type="password" name="teacher-code" placeholder="교사 코드" required class="w-full p-3 border border-gray-300 rounded-lg">
+                <button type="submit" class="w-full bg-teal-500 text-white font-bold py-3 rounded-lg hover:bg-teal-600 transition-colors">로그인</button>
+                <button type="button" class="back-button w-full bg-gray-300 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-400 transition-colors">뒤로가기</button>
+            </form>
+        </div>
+
+        <!-- Dashboard Placeholder Pages -->
+        <div id="student-dashboard-page" class="page hidden text-center">
+            <h2 class="text-3xl font-bold mb-4 text-indigo-600">학생 대시보드 (임시)</h2>
+            <p class="text-gray-600">성공적으로 로그인했습니다! 다음 단계에서 구현을 도와드릴게요.</p>
+        </div>
+        <div id="teacher-dashboard-page" class="page hidden text-center">
+            <h2 class="text-3xl font-bold mb-4 text-teal-600">교사 대시보드 (임시)</h2>
+            <p class="text-gray-600">성공적으로 로그인했습니다! 다음 단계에서 구현을 도와드릴게요.</p>
+        </div>
+    </div>
+</body>
+</html>
