@@ -144,7 +144,7 @@
                 </div>
                 <form id="teacher-login-form" class="space-y-4">
                     <div>
-                        <input type="text" id="teacher-code-input" placeholder="교사 코드" required
+                        <input type="password" id="teacher-code-input" placeholder="교사 코드" required
                             class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-white">
                     </div>
                     <button type="submit"
@@ -648,22 +648,13 @@
             const teacherCode = document.getElementById('teacher-code-input').value;
 
             showView('loading');
-            try {
-                const teachersRef = collection(db, `artifacts/${appId}/public/data/teachers`);
-                const q = query(teachersRef, where("code", "==", teacherCode));
-                const querySnapshot = await getDocs(q);
-                
-                if (querySnapshot.empty) {
-                    showMessageModal('로그인 실패', '교사 코드가 올바르지 않습니다.');
-                    showView('teacherLogin');
-                    return;
-                }
-
-                userId = querySnapshot.docs[0].id;
+            
+            // Hardcoded teacher code for demonstration
+            if (teacherCode === "superteacher") {
+                userId = "teacher-123"; // Use a consistent ID for the teacher user
                 renderTeacherDashboard();
-            } catch (error) {
-                console.error("Teacher login failed:", error);
-                showMessageModal('오류', '교사 로그인 중 오류가 발생했습니다.');
+            } else {
+                showMessageModal('로그인 실패', '교사 코드가 올바르지 않습니다.');
                 showView('teacherLogin');
             }
         });
