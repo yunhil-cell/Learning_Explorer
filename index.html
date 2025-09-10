@@ -306,7 +306,7 @@
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Constants from the execution environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
@@ -590,13 +590,13 @@
         function renderQuest(studentData) {
             const questContainer = document.getElementById('daily-quest-container');
             const dailyQuestId = 'daily_diary_quest';
-            const questCompleteDate = studentData.quests?.[dailyQuestId]?.completed_at;
+            const questCompletedDate = studentData.quests?.[dailyQuestId]?.completed_at;
             const today = new Date().toISOString().split('T')[0];
 
             questContainer.innerHTML = ''; // 기존 콘텐츠 삭제
 
             // 퀘스트 완료 여부 확인
-            const isCompletedToday = questCompleteDate && questCompleteDate.startsWith(today);
+            const isCompletedToday = questCompletedDate && questCompletedDate.startsWith(today);
 
             if (isCompletedToday) {
                 // 오늘 이미 퀘스트를 완료한 경우
@@ -642,7 +642,11 @@
                         const logEntry = document.createElement('div');
                         logEntry.className = 'bg-gray-700 rounded-lg p-3 shadow-sm';
 
-                        const date = new Date(logData.timestamp);
+                        // Check if timestamp is a valid number before creating a Date object
+                        const timestamp = logData.timestamp?.toMillis ? logData.timestamp.toMillis() : logData.timestamp;
+                        if (!timestamp) return;
+
+                        const date = new Date(timestamp);
                         const formattedTime = date.toLocaleTimeString('ko-KR', {
                             hour: '2-digit',
                             minute: '2-digit'
@@ -701,7 +705,7 @@
                 await addDoc(logCollectionRef, {
                     event_type: eventType,
                     details: details,
-                    timestamp: Date.now()
+                    timestamp: serverTimestamp() // Use serverTimestamp for accuracy
                 });
             } catch (error) {
                 console.error("Failed to log event:", error);
@@ -722,10 +726,13 @@
 
             const studentData = docSnap.data();
             const dailyQuestId = 'daily_diary_quest';
-            const questCompleteDate = studentData.quests?.[dailyQuestId]?.completed_at;
-            const today = new Date().toISOString().split('T')[0];
 
-            if (questCompleteDate && questCompleteDate.startsWith(today)) {
+            // Check if quest is already completed today using server timestamp logic
+            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at?.toMillis();
+            const now = Date.now();
+            const twentyFourHours = 24 * 60 * 60 * 1000;
+
+            if (questCompletedAt && (now - questCompletedAt < twentyFourHours)) {
                 showMessageModal('퀘스트 완료', '오늘의 퀘스트는 이미 완료했습니다.');
                 return;
             }
@@ -739,7 +746,7 @@
                 await updateDoc(studentDocRef, {
                     exp: newExp,
                     growth_points: newGrowthPoints,
-                    [`quests.${dailyQuestId}.completed_at`]: new Date().toISOString()
+                    [`quests.${dailyQuestId}.completed_at`]: serverTimestamp()
                 });
                 showMessageModal('퀘스트 성공', '오늘의 퀘스트를 완료하고 보상을 받았습니다!');
                 logEvent('quest_complete', {
@@ -808,7 +815,7 @@
                     ...studentData,
                     ...initialStats,
                     approvedBy: userId,
-                    createdAt: new Date().toISOString()
+                    createdAt: serverTimestamp() // Use serverTimestamp for accuracy
                 });
 
                 // 3. register 문서의 상태 업데이트
@@ -1003,7 +1010,7 @@
             showView('loading');
 
             try {
-                // 두 컬렉션 모두에서 아이디 중복 검사
+                // Check for duplicate IDs in both collections
                 const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
                 const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
                 const idQuery = query(studentsRef, where("id", "==", id));
@@ -1017,14 +1024,14 @@
                     return;
                 }
 
-                // register 컬렉션에 새 문서 추가
+                // Add new document to register collection
                 await addDoc(registerRef, {
                     grade: parseInt(grade, 10),
                     class: parseInt(className, 10),
                     number: parseInt(number, 10),
                     name: name,
                     id: id,
-                    password: password, // Note: In a real app, this should be hashed.
+                    password: password,
                     character_name: characterName,
                     status: '대기중'
                 });
@@ -1039,7 +1046,7 @@
             }
         });
 
-        // 로그아웃 버튼
+        // Logout buttons
         logoutBtn.addEventListener('click', () => {
             auth.signOut();
             userId = null;
