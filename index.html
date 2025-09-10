@@ -174,59 +174,95 @@
                         class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 border-transparent text-gray-400 hover:text-white">상점</button>
                 </div>
 
-                <div id="user-info-section" class="space-y-6">
-                    <!-- User Info Card -->
-                    <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
-                        <div class="flex items-center space-x-4 mb-4">
-                            <i class="fa-solid fa-user-circle text-4xl text-emerald-400"></i>
-                            <div class="flex-1">
-                                <h3 id="char-name-display" class="text-2xl font-bold"></h3>
-                                <p class="text-gray-400 text-sm">유저 ID: <span id="user-id-display" class="text-xs break-words"></span></p>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <!-- Level & EXP -->
-                            <div class="space-y-1">
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="font-semibold">레벨: <span id="level-display"></span></span>
-                                    <span id="exp-text-display" class="text-sm text-gray-400"></span>
-                                </div>
-                                <div class="progress-container">
-                                    <div id="exp-bar" class="progress-bar"></div>
+                <!-- Tab Sections -->
+                <div id="dashboard-sections">
+                    <!-- 5.1. User Info Section -->
+                    <div id="user-info-section" class="space-y-6">
+                        <!-- User Info Card -->
+                        <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
+                            <div class="flex items-center space-x-4 mb-4">
+                                <i class="fa-solid fa-user-circle text-4xl text-emerald-400"></i>
+                                <div class="flex-1">
+                                    <h3 id="char-name-display" class="text-2xl font-bold"></h3>
+                                    <p class="text-gray-400 text-sm">유저 ID: <span id="user-id-display"
+                                            class="text-xs break-words"></span></p>
                                 </div>
                             </div>
-                            <!-- Diamonds -->
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-gem text-blue-400 text-xl"></i>
-                                <span class="font-semibold">다이아: <span id="diamond-display"></span></span>
+
+                            <div class="space-y-4">
+                                <!-- Level & EXP -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="font-semibold">레벨: <span id="level-display"></span></span>
+                                        <span id="exp-text-display" class="text-sm text-gray-400"></span>
+                                    </div>
+                                    <div class="progress-container">
+                                        <div id="exp-bar" class="progress-bar"></div>
+                                    </div>
+                                </div>
+                                <!-- Diamonds -->
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-gem text-blue-400 text-xl"></i>
+                                    <span class="font-semibold">다이아: <span id="diamond-display"></span></span>
+                                </div>
+                                <!-- Growth Points -->
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-star text-yellow-400 text-xl"></i>
+                                    <span class="font-semibold">성장 포인트: <span id="growth-point-display"></span></span>
+                                </div>
                             </div>
-                            <!-- Growth Points -->
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-star text-yellow-400 text-xl"></i>
-                                <span class="font-semibold">성장 포인트: <span id="growth-point-display"></span></span>
+                        </div>
+
+                        <!-- Stats Card -->
+                        <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
+                            <h3 class="text-xl font-semibold mb-4">능력치</h3>
+                            <div id="stats-container" class="space-y-3">
+                                <!-- Stats will be rendered here dynamically -->
+                            </div>
+                            <button id="save-stats-btn"
+                                class="w-full p-3 mt-6 rounded-lg text-white font-semibold shadow-md bg-green-500 hover:bg-green-600 transition-colors">변경사항
+                                저장</button>
+                        </div>
+                    </div>
+
+                    <!-- 5.2. Quest Section -->
+                    <div id="quest-section" class="space-y-6 hidden">
+                        <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
+                                <i class="fa-solid fa-scroll text-yellow-400"></i>
+                                <span>오늘의 퀘스트</span>
+                            </h3>
+                            <div id="daily-quest-container">
+                                <p class="text-gray-400 mb-4">새로운 퀘스트를 기다리는 중...</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Stats Card -->
-                    <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
-                        <h3 class="text-xl font-semibold mb-4">능력치</h3>
-                        <div id="stats-container" class="space-y-3">
-                            <!-- Stats will be rendered here dynamically -->
+                    <!-- 5.3. Growth Log Section -->
+                    <div id="log-section" class="space-y-6 hidden">
+                        <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
+                                <i class="fa-solid fa-clipboard-list text-purple-400"></i>
+                                <span>성장일지</span>
+                            </h3>
+                            <p class="text-gray-400">이곳에 성장일지 기록이 표시됩니다.</p>
                         </div>
-                        <button id="save-stats-btn"
-                            class="w-full p-3 mt-6 rounded-lg text-white font-semibold shadow-md bg-green-500 hover:bg-green-600 transition-colors">변경사항 저장</button>
                     </div>
 
-                    <!-- Equipment Card (Placeholder) -->
-                    <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
-                        <h3 class="text-xl font-semibold mb-4">장비/칭호/스킬</h3>
-                        <p class="text-gray-400">이곳에 장착 아이템과 칭호 목록이 표시됩니다.</p>
+                    <!-- 5.4. Shop Section -->
+                    <div id="shop-section" class="space-y-6 hidden">
+                        <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
+                                <i class="fa-solid fa-shop text-red-400"></i>
+                                <span>상점</span>
+                            </h3>
+                            <p class="text-gray-400">이곳에 상점 아이템 목록이 표시됩니다.</p>
+                        </div>
                     </div>
+
                 </div>
             </div>
-            
+
             <!-- 6. Teacher Dashboard View -->
             <div id="teacher-dashboard-view" class="view hidden">
                 <div class="flex justify-between items-center mb-6">
@@ -234,7 +270,7 @@
                     <button id="teacher-logout-btn"
                         class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-500 hover:text-white transition-colors">로그아웃</button>
                 </div>
-                
+
                 <h3 class="text-xl font-semibold mb-4">미승인 학생 목록</h3>
                 <div id="pending-students-list" class="space-y-4">
                     <!-- Pending student list will be rendered here dynamically -->
@@ -253,7 +289,8 @@
     <!-- Custom Modal for Messages -->
     <div id="message-modal-overlay"
         class="hidden fixed inset-0 flex items-center justify-center z-50 modal-overlay transition-opacity duration-300">
-        <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300">
+        <div
+            class="bg-gray-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300">
             <h3 id="modal-title" class="text-xl font-semibold mb-4 text-white"></h3>
             <p id="modal-message" class="text-gray-300 mb-6"></p>
             <button id="modal-close-btn"
@@ -301,7 +338,7 @@
         const backToLandingFromLoginBtn = document.getElementById('back-to-landing-from-login');
         const backToLandingFromRegisterBtn = document.getElementById('back-to-landing-from-register');
         const backToLandingFromTeacherBtn = document.getElementById('back-to-landing-from-teacher');
-        
+
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
         const teacherLoginForm = document.getElementById('teacher-login-form');
@@ -313,6 +350,18 @@
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // Tab buttons
+        const tabInfoBtn = document.getElementById('tab-info');
+        const tabQuestBtn = document.getElementById('tab-quest');
+        const tabLogBtn = document.getElementById('tab-log');
+        const tabShopBtn = document.getElementById('tab-shop');
+
+        // Sections
+        const userInfoSection = document.getElementById('user-info-section');
+        const questSection = document.getElementById('quest-section');
+        const logSection = document.getElementById('log-section');
+        const shopSection = document.getElementById('shop-section');
 
         // Initial stat values for new students
         const initialStats = {
@@ -420,9 +469,27 @@
                     document.getElementById('growth-point-display').textContent = studentData.growth_points;
 
                     // EXP 바 업데이트
-                    const expPercentage = (studentData.exp / 200) * 100;
-                    document.getElementById('exp-bar').style.width = `${expPercentage}%`;
-                    document.getElementById('exp-text-display').textContent = `${studentData.exp}/200`;
+                    const expToNextLevel = 200; // Example: 200 exp per level
+                    const expPercentage = (studentData.exp / expToNextLevel) * 100;
+                    document.getElementById('exp-bar').style.width = `${Math.min(expPercentage, 100)}%`;
+                    document.getElementById('exp-text-display').textContent = `${studentData.exp}/${expToNextLevel}`;
+                    
+                    // 레벨업 로직 (경험치가 충분하면 레벨업)
+                    if (studentData.exp >= expToNextLevel) {
+                        const newLevel = studentData.level + 1;
+                        const newExp = studentData.exp - expToNextLevel;
+                        const newGrowthPoints = studentData.growth_points + 5; // 레벨업 보상
+                        
+                        updateDoc(studentDocRef, {
+                            level: newLevel,
+                            exp: newExp,
+                            growth_points: newGrowthPoints
+                        }).then(() => {
+                             showMessageModal('레벨업!', `축하합니다! 레벨 ${newLevel}이 되었습니다! 성장 포인트 5점을 얻었습니다.`);
+                        }).catch(error => {
+                            console.error("Level up failed:", error);
+                        });
+                    }
 
                     // 동적 능력치 렌더링
                     const statsContainer = document.getElementById('stats-container');
@@ -445,6 +512,9 @@
                     document.querySelectorAll('.stat-plus-btn').forEach(button => {
                         button.addEventListener('click', handleStatIncrease);
                     });
+                    
+                    // 퀘스트 상태 렌더링
+                    renderQuest(studentData);
 
                 } else {
                     // 사용자 문서가 없으면 로그아웃
@@ -460,7 +530,7 @@
                 showView('landing');
             });
         }
-        
+
         /**
          * Firestore의 실시간 데이터로 교사 대시보드를 렌더링합니다.
          */
@@ -506,6 +576,85 @@
         }
 
         /**
+         * 학생의 일일 퀘스트 상태를 렌더링하고 관리합니다.
+         * @param {Object} studentData - Firestore에서 가져온 학생 데이터.
+         */
+        function renderQuest(studentData) {
+            const questContainer = document.getElementById('daily-quest-container');
+            const dailyQuestId = 'daily_diary_quest';
+            const questCompleteDate = studentData.quests?.[dailyQuestId]?.completed_at;
+            const today = new Date().toISOString().split('T')[0];
+
+            questContainer.innerHTML = ''; // 기존 콘텐츠 삭제
+
+            // 퀘스트 완료 여부 확인
+            const isCompletedToday = questCompleteDate && questCompleteDate.startsWith(today);
+
+            if (isCompletedToday) {
+                // 오늘 이미 퀘스트를 완료한 경우
+                const card = document.createElement('div');
+                card.className = 'bg-gray-700 rounded-lg p-4 flex items-center justify-between';
+                card.innerHTML = `
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-300">오늘의 일기 쓰기</h4>
+                        <p class="text-sm text-emerald-400">퀘스트 완료!</p>
+                    </div>
+                    <i class="fa-solid fa-check-circle text-2xl text-emerald-400"></i>
+                `;
+                questContainer.appendChild(card);
+            } else {
+                // 아직 퀘스트를 완료하지 않은 경우
+                const card = document.createElement('div');
+                card.className = 'bg-gray-700 rounded-lg p-4 space-y-4';
+                card.innerHTML = `
+                    <h4 class="text-lg font-semibold text-white">오늘의 일기 쓰기</h4>
+                    <p class="text-gray-300">오늘 있었던 일을 간단히 기록해 보세요. 경험치 +50, 성장 포인트 +1</p>
+                    <button id="complete-quest-btn" class="w-full p-2 rounded-lg text-white font-semibold btn-primary">퀘스트 완료</button>
+                `;
+                questContainer.appendChild(card);
+                document.getElementById('complete-quest-btn').addEventListener('click', handleQuestCompletion);
+            }
+        }
+
+        /**
+         * 퀘스트 완료 버튼 클릭 이벤트를 처리하고 보상을 지급합니다.
+         */
+        async function handleQuestCompletion() {
+            const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+            const docSnap = await getDoc(studentDocRef);
+
+            if (!docSnap.exists()) {
+                showMessageModal('오류', '사용자 데이터를 찾을 수 없습니다.');
+                return;
+            }
+
+            const studentData = docSnap.data();
+            const dailyQuestId = 'daily_diary_quest';
+            const questCompleteDate = studentData.quests?.[dailyQuestId]?.completed_at;
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (questCompleteDate && questCompleteDate.startsWith(today)) {
+                showMessageModal('퀘스트 완료', '오늘의 퀘스트는 이미 완료했습니다.');
+                return;
+            }
+
+            const newExp = (studentData.exp || 0) + 50;
+            const newGrowthPoints = (studentData.growth_points || 0) + 1;
+
+            try {
+                await updateDoc(studentDocRef, {
+                    exp: newExp,
+                    growth_points: newGrowthPoints,
+                    [`quests.${dailyQuestId}.completed_at`]: new Date().toISOString()
+                });
+                showMessageModal('퀘스트 성공', '오늘의 퀘스트를 완료하고 보상을 받았습니다!');
+            } catch (error) {
+                console.error("Quest completion failed:", error);
+                showMessageModal('오류', '퀘스트 완료 중 오류가 발생했습니다.');
+            }
+        }
+
+        /**
          * 능력치 증가 버튼 클릭 이벤트를 처리합니다.
          * @param {Event} event - 클릭 이벤트 객체.
          */
@@ -527,7 +676,7 @@
                 }
             }
         }
-        
+
         /**
          * 가입 신청을 승인하고 학생 문서로 이동시킵니다.
          * @param {Event} event - 클릭 이벤트 객체.
@@ -538,7 +687,7 @@
                 // 1. register 문서 가져오기
                 const registerDocRef = doc(db, `artifacts/${appId}/public/data/register`, docId);
                 const registerDocSnap = await getDoc(registerDocRef);
-                
+
                 if (!registerDocSnap.exists()) {
                     showMessageModal('오류', '신청 정보를 찾을 수 없습니다.');
                     return;
@@ -553,7 +702,7 @@
                     approvedBy: userId,
                     createdAt: new Date().toISOString()
                 });
-                
+
                 // 3. register 문서의 상태 업데이트
                 await updateDoc(registerDocRef, { status: '승인됨' });
 
@@ -609,6 +758,59 @@
         backToLandingFromRegisterBtn.addEventListener('click', () => showView('landing'));
         backToLandingFromTeacherBtn.addEventListener('click', () => showView('landing'));
 
+        // Tab buttons
+        tabInfoBtn.addEventListener('click', () => {
+            userInfoSection.classList.remove('hidden');
+            questSection.classList.add('hidden');
+            logSection.classList.add('hidden');
+            shopSection.classList.add('hidden');
+            document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            tabInfoBtn.classList.remove('border-transparent', 'text-gray-400');
+            tabInfoBtn.classList.add('border-emerald-400', 'text-emerald-400');
+        });
+
+        tabQuestBtn.addEventListener('click', () => {
+            userInfoSection.classList.add('hidden');
+            questSection.classList.remove('hidden');
+            logSection.classList.add('hidden');
+            shopSection.classList.add('hidden');
+            document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            tabQuestBtn.classList.remove('border-transparent', 'text-gray-400');
+            tabQuestBtn.classList.add('border-emerald-400', 'text-emerald-400');
+        });
+
+        tabLogBtn.addEventListener('click', () => {
+            userInfoSection.classList.add('hidden');
+            questSection.classList.add('hidden');
+            logSection.classList.remove('hidden');
+            shopSection.classList.add('hidden');
+            document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            tabLogBtn.classList.remove('border-transparent', 'text-gray-400');
+            tabLogBtn.classList.add('border-emerald-400', 'text-emerald-400');
+        });
+
+        tabShopBtn.addEventListener('click', () => {
+            userInfoSection.classList.add('hidden');
+            questSection.classList.add('hidden');
+            logSection.classList.add('hidden');
+            shopSection.classList.remove('hidden');
+            document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            tabShopBtn.classList.remove('border-transparent', 'text-gray-400');
+            tabShopBtn.classList.add('border-emerald-400', 'text-emerald-400');
+        });
+
         // Student Login Form Submission
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -631,7 +833,7 @@
                 const studentDoc = querySnapshot.docs[0];
                 const studentData = studentDoc.data();
 
-                // 실제 앱에서는 해시 비교를 해야 합니다.
+                // Note: In a real app, this should be a hashed password comparison.
                 if (studentData.password !== password) {
                     showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
                     showView('studentLogin');
@@ -654,7 +856,7 @@
             const teacherCode = document.getElementById('teacher-code-input').value;
 
             showView('loading');
-            
+
             // Hardcoded teacher code for demonstration
             if (teacherCode === "superteacher") {
                 userId = "teacher-123"; // Use a consistent ID for the teacher user
@@ -738,7 +940,6 @@
             showView('landing');
         });
         saveStatsBtn.addEventListener('click', saveStats);
-
     </script>
 </body>
 
