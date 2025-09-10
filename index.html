@@ -6,7 +6,7 @@
     <title>배움 원정대</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -25,7 +25,8 @@
                     throw new Error("Firebase에 연결할 수 없습니다. 개발 환경 설정을 확인해주세요.");
                 }
 
-                const app = initializeApp(firebaseConfig);
+                // 앱이 이미 초기화되었는지 확인 후 초기화
+                const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
                 db = getFirestore(app);
                 auth = getAuth(app);
                 setLogLevel('debug');
