@@ -1223,26 +1223,38 @@
 
             try {
                 const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
-                const q = query(studentsRef, where("id", "==", studentId));
-                const querySnapshot = await getDocs(q);
+                const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
+                const studentsQuery = query(studentsRef, where("id", "==", studentId));
+                const registerQuery = query(registerRef, where("id", "==", studentId));
 
-                if (querySnapshot.empty) {
-                    showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
-                    showView('studentLogin');
-                    return;
+                const [studentsSnapshot, registerSnapshot] = await Promise.all([
+                    getDocs(studentsQuery),
+                    getDocs(registerQuery)
+                ]);
+
+                if (!studentsSnapshot.empty) {
+                    const studentDoc = studentsSnapshot.docs[0];
+                    const studentData = studentDoc.data();
+                    if (studentData.password === password) {
+                        userId = studentDoc.id;
+                        renderStudentDashboard();
+                        return;
+                    }
                 }
 
-                const studentDoc = querySnapshot.docs[0];
-                const studentData = studentDoc.data();
-
-                if (studentData.password !== password) {
-                    showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
-                    showView('studentLogin');
-                    return;
+                if (!registerSnapshot.empty) {
+                    const registerDoc = registerSnapshot.docs[0];
+                    const registerData = registerDoc.data();
+                    if (registerData.password === password) {
+                        showMessageModal('로그인 실패', '회원가입 승인 대기 중입니다.');
+                        showView('studentLogin');
+                        return;
+                    }
                 }
 
-                userId = studentDoc.id;
-                renderStudentDashboard();
+                showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
+                showView('studentLogin');
+
             } catch (error) {
                 console.error("Student login failed:", error);
                 showMessageModal('오류', '로그인 중 오류가 발생했습니다.');
