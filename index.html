@@ -243,7 +243,22 @@
                         <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
                             <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
                                 <i class="fa-solid fa-clipboard-list text-purple-400"></i>
-                                <span>성장일지</span>
+                                <span>성장일지 기록</span>
+                            </h3>
+                            <form id="growth-log-form" class="space-y-4">
+                                <textarea id="growth-log-text" rows="5"
+                                    class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white"
+                                    placeholder="오늘 배운 점이나 느낀 점을 기록해 보세요."></textarea>
+                                <button type="submit"
+                                    class="w-full p-3 rounded-lg text-white font-semibold shadow-md btn-primary">기록 전송</button>
+                            </form>
+                            <div id="growth-log-status" class="mt-4 p-4 rounded-lg text-center font-semibold hidden"></div>
+                        </div>
+
+                        <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 flex items-center space-x-2">
+                                <i class="fa-solid fa-history text-gray-400"></i>
+                                <span>나의 성장 기록</span>
                             </h3>
                             <div id="growth-log-container" class="space-y-4">
                                 <!-- Growth log entries will be rendered here dynamically -->
@@ -273,11 +288,32 @@
                     <button id="teacher-logout-btn"
                         class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-500 hover:text-white transition-colors">로그아웃</button>
                 </div>
+                <!-- Tabs -->
+                <div class="flex justify-around mb-6 text-sm md:text-base">
+                    <button id="teacher-tab-pending-students"
+                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">학생
+                        승인</button>
+                    <button id="teacher-tab-pending-logs"
+                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 border-transparent text-gray-400 hover:text-white">성장일지
+                        승인</button>
+                </div>
 
-                <h3 class="text-xl font-semibold mb-4">미승인 학생 목록</h3>
-                <div id="pending-students-list" class="space-y-4">
-                    <!-- Pending student list will be rendered here dynamically -->
-                    <p class="text-gray-400 text-center" id="no-pending-students">미승인 학생이 없습니다.</p>
+                <!-- Teacher Tab Sections -->
+                <div id="teacher-dashboard-sections">
+                    <div id="teacher-pending-students-section">
+                        <h3 class="text-xl font-semibold mb-4">미승인 학생 목록</h3>
+                        <div id="pending-students-list" class="space-y-4">
+                            <!-- Pending student list will be rendered here dynamically -->
+                            <p class="text-gray-400 text-center" id="no-pending-students">미승인 학생이 없습니다.</p>
+                        </div>
+                    </div>
+                    <div id="teacher-pending-logs-section" class="hidden">
+                        <h3 class="text-xl font-semibold mb-4">미승인 성장일지</h3>
+                        <div id="pending-growth-logs-list" class="space-y-4">
+                            <!-- Pending growth logs will be rendered here dynamically -->
+                            <p class="text-gray-400 text-center">미승인 성장일지가 없습니다.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -325,6 +361,7 @@
         let app, db, auth;
         let userId = null;
         let isAuthReady = false;
+        let studentDataCache = null;
 
         // UI element references
         const views = {
@@ -354,17 +391,23 @@
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
 
-        // Tab buttons
+        // Tab buttons (Student)
         const tabInfoBtn = document.getElementById('tab-info');
         const tabQuestBtn = document.getElementById('tab-quest');
         const tabLogBtn = document.getElementById('tab-log');
         const tabShopBtn = document.getElementById('tab-shop');
+
+        // Tab buttons (Teacher)
+        const teacherTabPendingStudentsBtn = document.getElementById('teacher-tab-pending-students');
+        const teacherTabPendingLogsBtn = document.getElementById('teacher-tab-pending-logs');
 
         // Sections
         const userInfoSection = document.getElementById('user-info-section');
         const questSection = document.getElementById('quest-section');
         const logSection = document.getElementById('log-section');
         const shopSection = document.getElementById('shop-section');
+        const teacherPendingStudentsSection = document.getElementById('teacher-pending-students-section');
+        const teacherPendingLogsSection = document.getElementById('teacher-pending-logs-section');
 
         // Initial stat values for new students
         const initialStats = {
@@ -426,11 +469,7 @@
                 db = getFirestore(app);
 
                 // 제공된 커스텀 토큰 또는 익명으로 인증
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInWithCustomToken(auth, initialAuthToken || 'anonymous-token').catch(() => signInAnonymously(auth));
 
                 userId = auth.currentUser.uid;
                 isAuthReady = true;
@@ -460,28 +499,28 @@
             onSnapshot(studentDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     showView('dashboard'); // 데이터 로드 후 대시보드 표시
-                    const studentData = docSnap.data();
+                    studentDataCache = docSnap.data();
 
                     // 협업/공유를 위해 사용자 ID 표시
                     document.getElementById('user-id-display').textContent = userId;
 
                     // 학생 데이터로 UI 업데이트
-                    document.getElementById('char-name-display').textContent = studentData.character_name;
-                    document.getElementById('level-display').textContent = studentData.level;
-                    document.getElementById('diamond-display').textContent = studentData.diamonds;
-                    document.getElementById('growth-point-display').textContent = studentData.growth_points;
+                    document.getElementById('char-name-display').textContent = studentDataCache.character_name;
+                    document.getElementById('level-display').textContent = studentDataCache.level;
+                    document.getElementById('diamond-display').textContent = studentDataCache.diamonds;
+                    document.getElementById('growth-point-display').textContent = studentDataCache.growth_points;
 
                     // EXP 바 업데이트
                     const expToNextLevel = 200; // Example: 200 exp per level
-                    const expPercentage = (studentData.exp / expToNextLevel) * 100;
+                    const expPercentage = (studentDataCache.exp / expToNextLevel) * 100;
                     document.getElementById('exp-bar').style.width = `${Math.min(expPercentage, 100)}%`;
-                    document.getElementById('exp-text-display').textContent = `${studentData.exp}/${expToNextLevel}`;
+                    document.getElementById('exp-text-display').textContent = `${studentDataCache.exp}/${expToNextLevel}`;
 
                     // 레벨업 로직 (경험치가 충분하면 레벨업)
-                    if (studentData.exp >= expToNextLevel) {
-                        const newLevel = studentData.level + 1;
-                        const newExp = studentData.exp - expToNextLevel;
-                        const newGrowthPoints = studentData.growth_points + 5; // 레벨업 보상
+                    if (studentDataCache.exp >= expToNextLevel) {
+                        const newLevel = studentDataCache.level + 1;
+                        const newExp = studentDataCache.exp - expToNextLevel;
+                        const newGrowthPoints = studentDataCache.growth_points + 5; // 레벨업 보상
 
                         updateDoc(studentDocRef, {
                             level: newLevel,
@@ -507,7 +546,7 @@
                         statElement.innerHTML = `
                             <span class="text-gray-300 font-semibold capitalize">${stat}</span>
                             <div class="flex items-center space-x-2">
-                                <span id="${stat}-display" class="text-emerald-400 font-bold text-lg">${studentData[stat]}</span>
+                                <span id="${stat}-display" class="text-emerald-400 font-bold text-lg">${studentDataCache[stat]}</span>
                                 <button data-stat="${stat}" class="stat-plus-btn bg-gray-600 w-8 h-8 rounded-full text-white font-bold text-sm hover:bg-emerald-400 transition-colors">+</button>
                             </div>
                         `;
@@ -520,8 +559,10 @@
                     });
 
                     // 퀘스트 상태 렌더링
-                    renderQuest(studentData);
-                    // 성장일지 렌더링
+                    renderQuest(studentDataCache);
+                    // 성장일지 제출 양식 및 상태 렌더링
+                    renderGrowthLogSubmissionForm(studentDataCache);
+                    // 성장일지 기록 렌더링
                     renderGrowthLog();
 
                 } else {
@@ -544,15 +585,13 @@
          */
         async function renderTeacherDashboard() {
             showView('loading');
+
+            // 학생 승인 탭 내용 렌더링
             const pendingListContainer = document.getElementById('pending-students-list');
-            pendingListContainer.innerHTML = '';
-
             const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
-            const q = query(registerRef, where("status", "==", "대기중"));
-
-            // onSnapshot에 오류 처리 콜백 추가
-            onSnapshot(q, (snapshot) => {
-                pendingListContainer.innerHTML = ''; // 이전 목록 지우기
+            const qStudents = query(registerRef, where("status", "==", "대기중"));
+            onSnapshot(qStudents, (snapshot) => {
+                pendingListContainer.innerHTML = '';
                 if (snapshot.empty) {
                     pendingListContainer.innerHTML = '<p class="text-gray-400 text-center">미승인 학생이 없습니다.</p>';
                 } else {
@@ -574,13 +613,45 @@
                         btn.addEventListener('click', handleApproveRequest);
                     });
                 }
-                showView('teacherDashboard');
-            }, (error) => {
-                console.error("Failed to fetch pending students:", error);
-                // 권한 오류 시 사용자에게 메시지 표시
-                showMessageModal('권한 오류', '미승인 학생 목록을 볼 수 있는 권한이 없습니다.');
-                showView('teacherLogin'); // 교사 로그인 화면으로 복귀
             });
+
+            // 성장일지 승인 탭 내용 렌더링
+            const pendingLogsContainer = document.getElementById('pending-growth-logs-list');
+            const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+            const qLogs = query(logsRef, where("status", "==", "pending"));
+            onSnapshot(qLogs, (snapshot) => {
+                pendingLogsContainer.innerHTML = '';
+                if (snapshot.empty) {
+                    pendingLogsContainer.innerHTML = '<p class="text-gray-400 text-center">미승인 성장일지가 없습니다.</p>';
+                } else {
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const docId = doc.id;
+                        const card = document.createElement('div');
+                        card.className = 'bg-gray-800 rounded-2xl p-4 shadow-md space-y-3';
+                        card.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-lg font-semibold">${data.student_name}님의 일지</h4>
+                                <p class="text-sm text-gray-400">${new Date(data.timestamp.toDate()).toLocaleDateString()}</p>
+                            </div>
+                            <p class="text-gray-300 text-sm overflow-hidden whitespace-nowrap overflow-ellipsis">${data.content}</p>
+                            <div class="flex justify-end space-x-2">
+                                <button data-id="${docId}" data-student-id="${data.student_id}" class="approve-log-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">승인</button>
+                                <button data-id="${docId}" data-student-id="${data.student_id}" class="reject-log-btn px-4 py-2 rounded-lg text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors">거절</button>
+                            </div>
+                        `;
+                        pendingLogsContainer.appendChild(card);
+                    });
+                    document.querySelectorAll('.approve-log-btn').forEach(btn => {
+                        btn.addEventListener('click', handleGrowthLogApproval);
+                    });
+                    document.querySelectorAll('.reject-log-btn').forEach(btn => {
+                        btn.addEventListener('click', handleGrowthLogRejection);
+                    });
+                }
+            });
+
+            showView('teacherDashboard');
         }
 
         /**
@@ -595,11 +666,9 @@
 
             questContainer.innerHTML = ''; // 기존 콘텐츠 삭제
 
-            // 퀘스트 완료 여부 확인
             const isCompletedToday = questCompletedDate && questCompletedDate.startsWith(today);
 
             if (isCompletedToday) {
-                // 오늘 이미 퀘스트를 완료한 경우
                 const card = document.createElement('div');
                 card.className = 'bg-gray-700 rounded-lg p-4 flex items-center justify-between';
                 card.innerHTML = `
@@ -611,7 +680,6 @@
                 `;
                 questContainer.appendChild(card);
             } else {
-                // 아직 퀘스트를 완료하지 않은 경우
                 const card = document.createElement('div');
                 card.className = 'bg-gray-700 rounded-lg p-4 space-y-4';
                 card.innerHTML = `
@@ -621,6 +689,46 @@
                 `;
                 questContainer.appendChild(card);
                 document.getElementById('complete-quest-btn').addEventListener('click', handleQuestCompletion);
+            }
+        }
+
+        /**
+         * 학생의 성장일지 제출 양식과 현재 상태를 렌더링합니다.
+         * @param {Object} studentData - 학생 데이터.
+         */
+        function renderGrowthLogSubmissionForm(studentData) {
+            const statusContainer = document.getElementById('growth-log-status');
+            const submissionForm = document.getElementById('growth-log-form');
+            const latestLogId = studentData.latest_log;
+
+            if (latestLogId) {
+                const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, latestLogId);
+                onSnapshot(logDocRef, (logSnap) => {
+                    if (logSnap.exists()) {
+                        const logData = logSnap.data();
+                        submissionForm.classList.add('hidden');
+                        statusContainer.classList.remove('hidden');
+
+                        if (logData.status === 'pending') {
+                            statusContainer.innerHTML = `<i class="fa-solid fa-hourglass-half text-yellow-400 mr-2"></i>승인 대기 중...`;
+                            statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-yellow-900 text-yellow-300';
+                        } else if (logData.status === 'approved') {
+                            statusContainer.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400 mr-2"></i>성장일지 승인 완료!`;
+                            statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-emerald-900 text-emerald-300';
+                        } else if (logData.status === 'rejected') {
+                            statusContainer.innerHTML = `<i class="fa-solid fa-times-circle text-red-400 mr-2"></i>성장일지 거절됨. 다시 작성해 보세요.`;
+                            statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-red-900 text-red-300';
+                            submissionForm.classList.remove('hidden');
+                        }
+                    } else {
+                        // 로그 문서가 삭제된 경우, 폼을 다시 표시
+                        submissionForm.classList.remove('hidden');
+                        statusContainer.classList.add('hidden');
+                    }
+                });
+            } else {
+                submissionForm.classList.remove('hidden');
+                statusContainer.classList.add('hidden');
             }
         }
 
@@ -651,6 +759,7 @@
                             hour: '2-digit',
                             minute: '2-digit'
                         });
+                        const formattedDate = date.toLocaleDateString('ko-KR');
 
                         let iconClass = '';
                         let message = '';
@@ -672,6 +781,16 @@
                                 message = `축하합니다! 레벨 ${logData.details.newLevel}이(가) 되었습니다!`;
                                 colorClass = 'text-yellow-400';
                                 break;
+                            case 'growth_log_approved':
+                                iconClass = 'fa-solid fa-clipboard-check';
+                                message = `성장일지가 승인되어 경험치 50, 성장 포인트 1을(를) 얻었습니다.`;
+                                colorClass = 'text-purple-400';
+                                break;
+                            case 'growth_log_rejected':
+                                iconClass = 'fa-solid fa-clipboard-xmark';
+                                message = `성장일지가 거절되어 경험치 20을(를) 얻었습니다.`;
+                                colorClass = 'text-red-400';
+                                break;
                             default:
                                 iconClass = 'fa-solid fa-info-circle';
                                 message = logData.message;
@@ -682,7 +801,7 @@
                                 <i class="${iconClass} text-lg ${colorClass}"></i>
                                 <p class="text-sm ${colorClass}">${message}</p>
                             </div>
-                            <p class="text-right text-xs text-gray-400">${formattedTime}</p>
+                            <p class="text-right text-xs text-gray-400">${formattedDate} ${formattedTime}</p>
                         `;
                         logContainer.appendChild(logEntry);
                     });
@@ -726,13 +845,11 @@
 
             const studentData = docSnap.data();
             const dailyQuestId = 'daily_diary_quest';
+            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at?.toDate();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            // Check if quest is already completed today using server timestamp logic
-            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at?.toMillis();
-            const now = Date.now();
-            const twentyFourHours = 24 * 60 * 60 * 1000;
-
-            if (questCompletedAt && (now - questCompletedAt < twentyFourHours)) {
+            if (questCompletedAt && questCompletedAt >= today) {
                 showMessageModal('퀘스트 완료', '오늘의 퀘스트는 이미 완료했습니다.');
                 return;
             }
@@ -761,6 +878,132 @@
         }
 
         /**
+         * 성장일지 제출 버튼 클릭 이벤트를 처리합니다.
+         */
+        async function handleGrowthLogSubmission(e) {
+            e.preventDefault();
+            const logText = document.getElementById('growth-log-text').value.trim();
+
+            if (!logText) {
+                showMessageModal('오류', '내용을 입력해 주세요.');
+                return;
+            }
+
+            const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+            const studentDoc = await getDoc(studentDocRef);
+            if (!studentDoc.exists()) {
+                showMessageModal('오류', '사용자 정보를 찾을 수 없습니다.');
+                return;
+            }
+            const studentData = studentDoc.data();
+
+            // 이전 성장일지 제출 상태 확인
+            const latestLogId = studentData.latest_log;
+            if (latestLogId) {
+                const latestLogDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/growth_logs`, latestLogId));
+                if (latestLogDoc.exists() && latestLogDoc.data().status === 'pending') {
+                    showMessageModal('대기 중', '이미 제출된 성장일지가 있습니다. 승인을 기다려 주세요.');
+                    return;
+                }
+            }
+
+            try {
+                const newLogRef = await addDoc(collection(db, `artifacts/${appId}/public/data/growth_logs`), {
+                    student_id: userId,
+                    student_name: studentData.name,
+                    content: logText,
+                    status: 'pending',
+                    timestamp: serverTimestamp()
+                });
+
+                await updateDoc(studentDocRef, {
+                    latest_log: newLogRef.id
+                });
+                
+                document.getElementById('growth-log-text').value = '';
+                showMessageModal('전송 완료', '성장일지가 교사에게 전송되었습니다. 승인을 기다려 주세요!');
+            } catch (error) {
+                console.error("Growth log submission failed:", error);
+                showMessageModal('오류', '성장일지 전송 중 오류가 발생했습니다.');
+            }
+        }
+
+        /**
+         * 교사가 성장일지 승인 버튼을 눌렀을 때 처리합니다.
+         * @param {Event} e - 클릭 이벤트.
+         */
+        async function handleGrowthLogApproval(e) {
+            const logId = e.target.dataset.id;
+            const studentId = e.target.dataset.studentId;
+
+            try {
+                const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
+                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+
+                await updateDoc(logDocRef, { status: 'approved' });
+
+                const studentDoc = await getDoc(studentDocRef);
+                const studentData = studentDoc.data();
+
+                const newExp = (studentData.exp || 0) + 50;
+                const newGrowthPoints = (studentData.growth_points || 0) + 1;
+
+                await updateDoc(studentDocRef, {
+                    exp: newExp,
+                    growth_points: newGrowthPoints
+                });
+
+                logEvent('growth_log_approved', {
+                    logId: logId,
+                    exp_gain: 50,
+                    growth_point_gain: 1
+                });
+
+                showMessageModal('승인', '성장일지가 승인되었습니다. 학생에게 보상이 지급됩니다.');
+
+            } catch (error) {
+                console.error("Growth log approval failed:", error);
+                showMessageModal('오류', '승인 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        /**
+         * 교사가 성장일지 거절 버튼을 눌렀을 때 처리합니다.
+         * @param {Event} e - 클릭 이벤트.
+         */
+        async function handleGrowthLogRejection(e) {
+            const logId = e.target.dataset.id;
+            const studentId = e.target.dataset.studentId;
+
+            try {
+                const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
+                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+
+                await updateDoc(logDocRef, { status: 'rejected' });
+
+                const studentDoc = await getDoc(studentDocRef);
+                const studentData = studentDoc.data();
+
+                const newExp = (studentData.exp || 0) + 20;
+
+                await updateDoc(studentDocRef, {
+                    exp: newExp
+                });
+
+                logEvent('growth_log_rejected', {
+                    logId: logId,
+                    exp_gain: 20
+                });
+                
+                showMessageModal('거절', '성장일지가 거절되었습니다. 학생에게 20 경험치가 지급됩니다.');
+
+            } catch (error) {
+                console.error("Growth log rejection failed:", error);
+                showMessageModal('오류', '거절 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        /**
          * 능력치 증가 버튼 클릭 이벤트를 처리합니다.
          * @param {Event} event - 클릭 이벤트 객체.
          */
@@ -779,7 +1022,7 @@
                         [stat]: newValue,
                         growth_points: newGrowthPoints
                     });
-                    
+
                     // UI는 onSnapshot에서 자동 업데이트
                     showMessageModal('능력치 상승', `${stat} 능력치가 ${newValue} (으)로 상승했습니다.`);
                     logEvent('stat_increase', {
@@ -878,7 +1121,7 @@
         backToLandingFromRegisterBtn.addEventListener('click', () => showView('landing'));
         backToLandingFromTeacherBtn.addEventListener('click', () => showView('landing'));
 
-        // Tab buttons
+        // Student Tab buttons
         tabInfoBtn.addEventListener('click', () => {
             userInfoSection.classList.remove('hidden');
             questSection.classList.add('hidden');
@@ -891,7 +1134,6 @@
             tabInfoBtn.classList.remove('border-transparent', 'text-gray-400');
             tabInfoBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
-
         tabQuestBtn.addEventListener('click', () => {
             userInfoSection.classList.add('hidden');
             questSection.classList.remove('hidden');
@@ -904,7 +1146,6 @@
             tabQuestBtn.classList.remove('border-transparent', 'text-gray-400');
             tabQuestBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
-
         tabLogBtn.addEventListener('click', () => {
             userInfoSection.classList.add('hidden');
             questSection.classList.add('hidden');
@@ -917,7 +1158,6 @@
             tabLogBtn.classList.remove('border-transparent', 'text-gray-400');
             tabLogBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
-
         tabShopBtn.addEventListener('click', () => {
             userInfoSection.classList.add('hidden');
             questSection.classList.add('hidden');
@@ -929,6 +1169,24 @@
             });
             tabShopBtn.classList.remove('border-transparent', 'text-gray-400');
             tabShopBtn.classList.add('border-emerald-400', 'text-emerald-400');
+        });
+        
+        // Teacher Tab buttons
+        teacherTabPendingStudentsBtn.addEventListener('click', () => {
+            teacherPendingStudentsSection.classList.remove('hidden');
+            teacherPendingLogsSection.classList.add('hidden');
+            teacherTabPendingStudentsBtn.classList.remove('border-transparent', 'text-gray-400');
+            teacherTabPendingStudentsBtn.classList.add('border-emerald-400', 'text-emerald-400');
+            teacherTabPendingLogsBtn.classList.remove('border-emerald-400', 'text-emerald-400');
+            teacherTabPendingLogsBtn.classList.add('border-transparent', 'text-gray-400');
+        });
+        teacherTabPendingLogsBtn.addEventListener('click', () => {
+            teacherPendingStudentsSection.classList.add('hidden');
+            teacherPendingLogsSection.classList.remove('hidden');
+            teacherTabPendingStudentsBtn.classList.remove('border-emerald-400', 'text-emerald-400');
+            teacherTabPendingStudentsBtn.classList.add('border-transparent', 'text-gray-400');
+            teacherTabPendingLogsBtn.classList.remove('border-transparent', 'text-gray-400');
+            teacherTabPendingLogsBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
 
         // Student Login Form Submission
@@ -1060,6 +1318,9 @@
             showView('landing');
         });
         saveStatsBtn.addEventListener('click', saveStats);
+
+        // Growth log submission listener
+        document.getElementById('growth-log-form').addEventListener('submit', handleGrowthLogSubmission);
     </script>
 </body>
 
