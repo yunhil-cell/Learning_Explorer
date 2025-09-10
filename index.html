@@ -342,7 +342,7 @@
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Constants from the execution environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
@@ -433,8 +433,8 @@
         // --- Core Functions ---
 
         /**
-         * 특정 뷰를 표시하고 다른 모든 뷰는 숨깁니다.
-         * @param {string} viewName - 표시할 뷰의 이름.
+         * Renders a specific view and hides all others.
+         * @param {string} viewName - The name of the view to show.
          */
         function showView(viewName) {
             loadingSpinner.classList.add('hidden');
@@ -448,9 +448,9 @@
         }
 
         /**
-         * 커스텀 모달 메시지를 표시합니다.
-         * @param {string} title - 모달 제목.
-         * @param {string} message - 표시할 메시지.
+         * Shows a custom modal message.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message to display.
          */
         function showMessageModal(title, message) {
             modalTitle.textContent = title;
@@ -459,16 +459,15 @@
         }
 
         /**
-         * Firebase를 초기화하고 사용자를 인증합니다.
+         * Initializes Firebase and authenticates the user.
          */
         async function initFirebase() {
             try {
-                setLogLevel('debug'); // Firestore 디버그 로깅 활성화
+                setLogLevel('debug');
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // 제공된 커스텀 토큰 또는 익명으로 인증
                 await signInWithCustomToken(auth, initialAuthToken || 'anonymous-token').catch(() => signInAnonymously(auth));
 
                 userId = auth.currentUser.uid;
@@ -476,7 +475,6 @@
 
                 console.log('Firebase initialized. User ID:', userId);
 
-                // 첫 화면으로 시작
                 showView('landing');
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
@@ -487,40 +485,35 @@
         // --- Data Handling ---
 
         /**
-         * Firestore의 실시간 데이터로 학생 대시보드를 렌더링합니다.
+         * Renders the student dashboard with real-time data from Firestore.
          */
         function renderStudentDashboard() {
             if (!userId) return;
 
-            showView('loading'); // 데이터를 가져오는 동안 스피너 표시
+            showView('loading');
             const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
 
-            // onSnapshot을 사용하여 실시간 업데이트
             onSnapshot(studentDocRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    showView('dashboard'); // 데이터 로드 후 대시보드 표시
+                    showView('dashboard');
                     studentDataCache = docSnap.data();
 
-                    // 협업/공유를 위해 사용자 ID 표시
                     document.getElementById('user-id-display').textContent = userId;
 
-                    // 학생 데이터로 UI 업데이트
                     document.getElementById('char-name-display').textContent = studentDataCache.character_name;
                     document.getElementById('level-display').textContent = studentDataCache.level;
                     document.getElementById('diamond-display').textContent = studentDataCache.diamonds;
                     document.getElementById('growth-point-display').textContent = studentDataCache.growth_points;
 
-                    // EXP 바 업데이트
-                    const expToNextLevel = 200; // Example: 200 exp per level
+                    const expToNextLevel = 200;
                     const expPercentage = (studentDataCache.exp / expToNextLevel) * 100;
                     document.getElementById('exp-bar').style.width = `${Math.min(expPercentage, 100)}%`;
                     document.getElementById('exp-text-display').textContent = `${studentDataCache.exp}/${expToNextLevel}`;
 
-                    // 레벨업 로직 (경험치가 충분하면 레벨업)
                     if (studentDataCache.exp >= expToNextLevel) {
                         const newLevel = studentDataCache.level + 1;
                         const newExp = studentDataCache.exp - expToNextLevel;
-                        const newGrowthPoints = studentDataCache.growth_points + 5; // 레벨업 보상
+                        const newGrowthPoints = studentDataCache.growth_points + 5;
 
                         updateDoc(studentDocRef, {
                             level: newLevel,
@@ -536,9 +529,8 @@
                         });
                     }
 
-                    // 동적 능력치 렌더링
                     const statsContainer = document.getElementById('stats-container');
-                    statsContainer.innerHTML = ''; // 이전 능력치 지우기
+                    statsContainer.innerHTML = '';
                     const stats = ['stamina', 'attack', 'defense', 'luck'];
                     stats.forEach(stat => {
                         const statElement = document.createElement('div');
@@ -553,20 +545,15 @@
                         statsContainer.appendChild(statElement);
                     });
 
-                    // 새 능력치 + 버튼에 이벤트 리스너 추가
                     document.querySelectorAll('.stat-plus-btn').forEach(button => {
                         button.addEventListener('click', handleStatIncrease);
                     });
 
-                    // 퀘스트 상태 렌더링
                     renderQuest(studentDataCache);
-                    // 성장일지 제출 양식 및 상태 렌더링
                     renderGrowthLogSubmissionForm(studentDataCache);
-                    // 성장일지 기록 렌더링
                     renderGrowthLog();
 
                 } else {
-                    // 사용자 문서가 없으면 로그아웃
                     console.error("Student data not found for user ID:", userId);
                     showMessageModal('오류', '학생 데이터를 찾을 수 없습니다. 다시 로그인해주세요.');
                     auth.signOut();
@@ -581,12 +568,11 @@
         }
 
         /**
-         * Firestore의 실시간 데이터로 교사 대시보드를 렌더링합니다.
+         * Renders the teacher dashboard with real-time data from Firestore.
          */
         async function renderTeacherDashboard() {
             showView('loading');
 
-            // 학생 승인 탭 내용 렌더링
             const pendingListContainer = document.getElementById('pending-students-list');
             const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
             const qStudents = query(registerRef, where("status", "==", "대기중"));
@@ -605,7 +591,7 @@
                                 <h4 class="text-lg font-semibold">${data.name} (${data.id})</h4>
                                 <p class="text-gray-400 text-sm">학년: ${data.grade}반: ${data.class} 번호: ${data.number}</p>
                             </div>
-                            <button data-id="${docId}" class="approve-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">승인</button>
+                            <button data-id="${docId}" class="approve-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">최고</button>
                         `;
                         pendingListContainer.appendChild(card);
                     });
@@ -615,7 +601,6 @@
                 }
             });
 
-            // 성장일지 승인 탭 내용 렌더링
             const pendingLogsContainer = document.getElementById('pending-growth-logs-list');
             const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
             const qLogs = query(logsRef, where("status", "==", "pending"));
@@ -632,12 +617,12 @@
                         card.innerHTML = `
                             <div class="flex items-center justify-between">
                                 <h4 class="text-lg font-semibold">${data.student_name}님의 일지</h4>
-                                <p class="text-sm text-gray-400">${new Date(data.timestamp.toDate()).toLocaleDateString()}</p>
+                                <p class="text-sm text-gray-400">${data.timestamp.toDate().toLocaleDateString()}</p>
                             </div>
                             <p class="text-gray-300 text-sm overflow-hidden whitespace-nowrap overflow-ellipsis">${data.content}</p>
                             <div class="flex justify-end space-x-2">
-                                <button data-id="${docId}" data-student-id="${data.student_id}" class="approve-log-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">승인</button>
-                                <button data-id="${docId}" data-student-id="${data.student_id}" class="reject-log-btn px-4 py-2 rounded-lg text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors">거절</button>
+                                <button data-id="${docId}" data-student-id="${data.student_id}" class="approve-log-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">최고</button>
+                                <button data-id="${docId}" data-student-id="${data.student_id}" class="reject-log-btn px-4 py-2 rounded-lg text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors">확인</button>
                             </div>
                         `;
                         pendingLogsContainer.appendChild(card);
@@ -655,8 +640,8 @@
         }
 
         /**
-         * 학생의 일일 퀘스트 상태를 렌더링하고 관리합니다.
-         * @param {Object} studentData - Firestore에서 가져온 학생 데이터.
+         * Renders the student's daily quest status and manages it.
+         * @param {Object} studentData - The student's data from Firestore.
          */
         function renderQuest(studentData) {
             const questContainer = document.getElementById('daily-quest-container');
@@ -664,7 +649,7 @@
             const questCompletedDate = studentData.quests?.[dailyQuestId]?.completed_at;
             const today = new Date().toISOString().split('T')[0];
 
-            questContainer.innerHTML = ''; // 기존 콘텐츠 삭제
+            questContainer.innerHTML = '';
 
             const isCompletedToday = questCompletedDate && questCompletedDate.startsWith(today);
 
@@ -693,35 +678,70 @@
         }
 
         /**
-         * 학생의 성장일지 제출 양식과 현재 상태를 렌더링합니다.
-         * @param {Object} studentData - 학생 데이터.
+         * Renders the student's growth log submission form and current status.
+         * @param {Object} studentData - Student data.
          */
         function renderGrowthLogSubmissionForm(studentData) {
             const statusContainer = document.getElementById('growth-log-status');
             const submissionForm = document.getElementById('growth-log-form');
             const latestLogId = studentData.latest_log;
 
+            // Check if a growth log was already submitted today
+            const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const q = query(logsCollectionRef, 
+                where("student_id", "==", userId),
+                where("timestamp", ">=", todayStart)
+            );
+
+            getDocs(q).then((querySnapshot) => {
+                if (!querySnapshot.empty) {
+                    submissionForm.classList.add('hidden');
+                    statusContainer.classList.remove('hidden');
+                    statusContainer.innerHTML = `<i class="fa-solid fa-calendar-check text-emerald-400 mr-2"></i>오늘의 성장일지를 이미 제출했습니다. 내일 다시 도전하세요!`;
+                    statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-emerald-900 text-emerald-300';
+                } else {
+                    submissionForm.classList.remove('hidden');
+                    statusContainer.classList.add('hidden');
+                }
+            }).catch(error => {
+                console.error("Error checking for existing log:", error);
+            });
+            
+            // This part handles the status of the latest submission
             if (latestLogId) {
                 const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, latestLogId);
                 onSnapshot(logDocRef, (logSnap) => {
                     if (logSnap.exists()) {
                         const logData = logSnap.data();
-                        submissionForm.classList.add('hidden');
-                        statusContainer.classList.remove('hidden');
-
-                        if (logData.status === 'pending') {
-                            statusContainer.innerHTML = `<i class="fa-solid fa-hourglass-half text-yellow-400 mr-2"></i>승인 대기 중...`;
-                            statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-yellow-900 text-yellow-300';
-                        } else if (logData.status === 'approved') {
-                            statusContainer.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400 mr-2"></i>성장일지 승인 완료!`;
-                            statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-emerald-900 text-emerald-300';
-                        } else if (logData.status === 'rejected') {
-                            statusContainer.innerHTML = `<i class="fa-solid fa-times-circle text-red-400 mr-2"></i>성장일지 거절됨. 다시 작성해 보세요.`;
-                            statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-red-900 text-red-300';
+                        
+                        // Check if the log was submitted today
+                        const logDate = logData.timestamp.toDate();
+                        const today = new Date();
+                        if (logDate.getDate() === today.getDate() && logDate.getMonth() === today.getMonth() && logDate.getFullYear() === today.getFullYear()) {
+                            if (logData.status === 'pending') {
+                                submissionForm.classList.add('hidden');
+                                statusContainer.classList.remove('hidden');
+                                statusContainer.innerHTML = `<i class="fa-solid fa-hourglass-half text-yellow-400 mr-2"></i>승인 대기 중...`;
+                                statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-yellow-900 text-yellow-300';
+                            } else if (logData.status === 'approved') {
+                                submissionForm.classList.add('hidden');
+                                statusContainer.classList.remove('hidden');
+                                statusContainer.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400 mr-2"></i>성장일지 최고!`;
+                                statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-emerald-900 text-emerald-300';
+                            } else if (logData.status === 'rejected') {
+                                submissionForm.classList.add('hidden');
+                                statusContainer.classList.remove('hidden');
+                                statusContainer.innerHTML = `<i class="fa-solid fa-times-circle text-red-400 mr-2"></i>성장일지가 확인되었습니다. 다시 작성해 보세요.`;
+                                statusContainer.className = 'mt-4 p-4 rounded-lg text-center font-semibold bg-red-900 text-red-300';
+                            }
+                        } else {
                             submissionForm.classList.remove('hidden');
+                            statusContainer.classList.add('hidden');
                         }
                     } else {
-                        // 로그 문서가 삭제된 경우, 폼을 다시 표시
+                        // Log document was deleted, show the form again
                         submissionForm.classList.remove('hidden');
                         statusContainer.classList.add('hidden');
                     }
@@ -731,14 +751,16 @@
                 statusContainer.classList.add('hidden');
             }
         }
-
+        
         /**
-         * 학생의 성장일지 기록을 렌더링합니다.
+         * Renders the student's growth log history.
          */
         function renderGrowthLog() {
             const logContainer = document.getElementById('growth-log-container');
-            const logCollectionRef = collection(db, `artifacts/${appId}/public/data/students/${userId}/log`);
-            const q = query(logCollectionRef, orderBy('timestamp', 'desc'), limit(50));
+            const logCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+            const q = query(logCollectionRef, 
+                where("student_id", "==", userId),
+                orderBy('timestamp', 'desc'), limit(50));
 
             onSnapshot(q, (snapshot) => {
                 logContainer.innerHTML = '';
@@ -750,7 +772,6 @@
                         const logEntry = document.createElement('div');
                         logEntry.className = 'bg-gray-700 rounded-lg p-3 shadow-sm';
 
-                        // Check if timestamp is a valid number before creating a Date object
                         const timestamp = logData.timestamp?.toMillis ? logData.timestamp.toMillis() : logData.timestamp;
                         if (!timestamp) return;
 
@@ -765,35 +786,25 @@
                         let message = '';
                         let colorClass = 'text-gray-300';
 
-                        switch (logData.event_type) {
-                            case 'quest_complete':
-                                iconClass = 'fa-solid fa-scroll';
-                                message = `퀘스트 "${logData.details.quest_name}"을 완료하고 경험치 ${logData.details.exp_gain}과 성장 포인트 ${logData.details.growth_point_gain}을(를) 얻었습니다.`;
+                        switch (logData.status) {
+                            case 'approved':
+                                iconClass = 'fa-solid fa-check-circle';
+                                message = `성장일지: "${logData.content}"`;
                                 colorClass = 'text-emerald-400';
                                 break;
-                            case 'stat_increase':
-                                iconClass = 'fa-solid fa-arrow-up';
-                                message = `${logData.details.stat_name} 능력치가 ${logData.details.new_value} (으)로 상승했습니다.`;
-                                colorClass = 'text-blue-400';
-                                break;
-                            case 'level_up':
-                                iconClass = 'fa-solid fa-star';
-                                message = `축하합니다! 레벨 ${logData.details.newLevel}이(가) 되었습니다!`;
-                                colorClass = 'text-yellow-400';
-                                break;
-                            case 'growth_log_approved':
-                                iconClass = 'fa-solid fa-clipboard-check';
-                                message = `성장일지가 승인되어 경험치 50, 성장 포인트 1을(를) 얻었습니다.`;
-                                colorClass = 'text-purple-400';
-                                break;
-                            case 'growth_log_rejected':
-                                iconClass = 'fa-solid fa-clipboard-xmark';
-                                message = `성장일지가 거절되어 경험치 20을(를) 얻었습니다.`;
+                            case 'rejected':
+                                iconClass = 'fa-solid fa-times-circle';
+                                message = `성장일지: "${logData.content}"`;
                                 colorClass = 'text-red-400';
+                                break;
+                            case 'pending':
+                                iconClass = 'fa-solid fa-hourglass-half';
+                                message = `성장일지: "${logData.content}" (승인 대기 중)`;
+                                colorClass = 'text-yellow-400';
                                 break;
                             default:
                                 iconClass = 'fa-solid fa-info-circle';
-                                message = logData.message;
+                                message = logData.content;
                         }
 
                         logEntry.innerHTML = `
@@ -811,11 +822,11 @@
                 logContainer.innerHTML = '<p class="text-red-400">성장 기록을 불러오는 중 오류가 발생했습니다.</p>';
             });
         }
-
+        
         /**
-         * 학생의 성장일지에 이벤트를 기록합니다.
-         * @param {string} eventType - 이벤트 유형. 예: 'quest_complete', 'level_up'
-         * @param {object} details - 이벤트 상세 정보.
+         * Logs an event to the student's growth log.
+         * @param {string} eventType - The type of event.
+         * @param {object} details - Details of the event.
          */
         async function logEvent(eventType, details) {
             if (!userId) return;
@@ -824,7 +835,7 @@
                 await addDoc(logCollectionRef, {
                     event_type: eventType,
                     details: details,
-                    timestamp: serverTimestamp() // Use serverTimestamp for accuracy
+                    timestamp: serverTimestamp()
                 });
             } catch (error) {
                 console.error("Failed to log event:", error);
@@ -832,7 +843,7 @@
         }
 
         /**
-         * 퀘스트 완료 버튼 클릭 이벤트를 처리하고 보상을 지급합니다.
+         * Handles quest completion and awards the user.
          */
         async function handleQuestCompletion() {
             const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
@@ -878,7 +889,7 @@
         }
 
         /**
-         * 성장일지 제출 버튼 클릭 이벤트를 처리합니다.
+         * Handles the growth log submission button click.
          */
         async function handleGrowthLogSubmission(e) {
             e.preventDefault();
@@ -889,25 +900,30 @@
                 return;
             }
 
-            const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
-            const studentDoc = await getDoc(studentDocRef);
-            if (!studentDoc.exists()) {
-                showMessageModal('오류', '사용자 정보를 찾을 수 없습니다.');
-                return;
-            }
-            const studentData = studentDoc.data();
-
-            // 이전 성장일지 제출 상태 확인
-            const latestLogId = studentData.latest_log;
-            if (latestLogId) {
-                const latestLogDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/growth_logs`, latestLogId));
-                if (latestLogDoc.exists() && latestLogDoc.data().status === 'pending') {
-                    showMessageModal('대기 중', '이미 제출된 성장일지가 있습니다. 승인을 기다려 주세요.');
+            // Check if a growth log was already submitted today
+            const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const q = query(logsCollectionRef, 
+                where("student_id", "==", userId),
+                where("timestamp", ">=", todayStart)
+            );
+            
+            try {
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    showMessageModal('제출 불가', '오늘의 성장일지를 이미 제출했습니다. 하루 한 번만 제출할 수 있습니다.');
                     return;
                 }
-            }
 
-            try {
+                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+                const studentDoc = await getDoc(studentDocRef);
+                if (!studentDoc.exists()) {
+                    showMessageModal('오류', '사용자 정보를 찾을 수 없습니다.');
+                    return;
+                }
+                const studentData = studentDoc.data();
+
                 const newLogRef = await addDoc(collection(db, `artifacts/${appId}/public/data/growth_logs`), {
                     student_id: userId,
                     student_name: studentData.name,
@@ -929,8 +945,8 @@
         }
 
         /**
-         * 교사가 성장일지 승인 버튼을 눌렀을 때 처리합니다.
-         * @param {Event} e - 클릭 이벤트.
+         * Handles teacher approval of a growth log.
+         * @param {Event} e - Click event.
          */
         async function handleGrowthLogApproval(e) {
             const logId = e.target.dataset.id;
@@ -939,6 +955,13 @@
             try {
                 const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
                 const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+
+                const logDocSnap = await getDoc(logDocRef);
+                const currentStatus = logDocSnap.data()?.status;
+                if (currentStatus !== 'pending') {
+                    showMessageModal('이미 처리됨', '이미 승인되었거나 거절된 일지입니다.');
+                    return;
+                }
 
                 await updateDoc(logDocRef, { status: 'approved' });
 
@@ -953,23 +976,23 @@
                     growth_points: newGrowthPoints
                 });
 
-                logEvent('growth_log_approved', {
+                logEvent(studentId, 'growth_log_approved', {
                     logId: logId,
                     exp_gain: 50,
                     growth_point_gain: 1
                 });
 
-                showMessageModal('승인', '성장일지가 승인되었습니다. 학생에게 보상이 지급됩니다.');
+                showMessageModal('최고!', '성장일지가 최고 점수를 받았습니다. 학생에게 보상이 지급됩니다.');
 
             } catch (error) {
                 console.error("Growth log approval failed:", error);
-                showMessageModal('오류', '승인 처리 중 오류가 발생했습니다.');
+                showMessageModal('오류', '최고 점수 처리 중 오류가 발생했습니다.');
             }
         }
 
         /**
-         * 교사가 성장일지 거절 버튼을 눌렀을 때 처리합니다.
-         * @param {Event} e - 클릭 이벤트.
+         * Handles teacher rejection of a growth log.
+         * @param {Event} e - Click event.
          */
         async function handleGrowthLogRejection(e) {
             const logId = e.target.dataset.id;
@@ -978,6 +1001,13 @@
             try {
                 const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
                 const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+
+                const logDocSnap = await getDoc(logDocRef);
+                const currentStatus = logDocSnap.data()?.status;
+                if (currentStatus !== 'pending') {
+                    showMessageModal('이미 처리됨', '이미 승인되었거나 거절된 일지입니다.');
+                    return;
+                }
 
                 await updateDoc(logDocRef, { status: 'rejected' });
 
@@ -990,22 +1020,22 @@
                     exp: newExp
                 });
 
-                logEvent('growth_log_rejected', {
+                logEvent(studentId, 'growth_log_rejected', {
                     logId: logId,
                     exp_gain: 20
                 });
                 
-                showMessageModal('거절', '성장일지가 거절되었습니다. 학생에게 20 경험치가 지급됩니다.');
+                showMessageModal('확인', '성장일지가 확인되었습니다. 학생에게 20 경험치가 지급됩니다.');
 
             } catch (error) {
                 console.error("Growth log rejection failed:", error);
-                showMessageModal('오류', '거절 처리 중 오류가 발생했습니다.');
+                showMessageModal('오류', '확인 처리 중 오류가 발생했습니다.');
             }
         }
 
         /**
-         * 능력치 증가 버튼 클릭 이벤트를 처리합니다.
-         * @param {Event} event - 클릭 이벤트 객체.
+         * Handles the stat increase button click.
+         * @param {Event} event - The click event object.
          */
         async function handleStatIncrease(event) {
             const stat = event.target.dataset.stat;
@@ -1023,9 +1053,8 @@
                         growth_points: newGrowthPoints
                     });
 
-                    // UI는 onSnapshot에서 자동 업데이트
                     showMessageModal('능력치 상승', `${stat} 능력치가 ${newValue} (으)로 상승했습니다.`);
-                    logEvent('stat_increase', {
+                    logEvent(userId, 'stat_increase', {
                         stat_name: stat,
                         new_value: newValue
                     });
@@ -1036,13 +1065,12 @@
         }
 
         /**
-         * 가입 신청을 승인하고 학생 문서로 이동시킵니다.
-         * @param {Event} event - 클릭 이벤트 객체.
+         * Approves a registration request and moves the data to the students collection.
+         * @param {Event} event - The click event object.
          */
         async function handleApproveRequest(event) {
             const docId = event.target.dataset.id;
             try {
-                // 1. register 문서 가져오기
                 const registerDocRef = doc(db, `artifacts/${appId}/public/data/register`, docId);
                 const registerDocSnap = await getDoc(registerDocRef);
 
@@ -1052,16 +1080,14 @@
                 }
                 const studentData = registerDocSnap.data();
 
-                // 2. students 컬렉션에 새 문서 생성
                 const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, docId);
                 await setDoc(studentsDocRef, {
                     ...studentData,
                     ...initialStats,
                     approvedBy: userId,
-                    createdAt: serverTimestamp() // Use serverTimestamp for accuracy
+                    createdAt: serverTimestamp()
                 });
 
-                // 3. register 문서의 상태 업데이트
                 await updateDoc(registerDocRef, {
                     status: '승인됨'
                 });
@@ -1074,7 +1100,7 @@
         }
 
         /**
-         * 업데이트된 능력치를 Firestore에 저장합니다.
+         * Saves the updated stats to Firestore.
          */
         async function saveStats() {
             try {
@@ -1095,7 +1121,7 @@
                     growth_points: growthPoints
                 });
                 showMessageModal('저장 완료', '능력치가 성공적으로 저장되었습니다.');
-                logEvent('stat_save', {
+                logEvent(userId, 'stat_save', {
                     message: '능력치 변경사항을 저장했습니다.'
                 });
             } catch (error) {
@@ -1211,15 +1237,13 @@
                 const studentDoc = querySnapshot.docs[0];
                 const studentData = studentDoc.data();
 
-                // Note: In a real app, this should be a hashed password comparison.
                 if (studentData.password !== password) {
                     showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
                     showView('studentLogin');
                     return;
                 }
 
-                // 로그인 성공
-                userId = studentDoc.id; // 사용자 ID로 문서 ID 사용
+                userId = studentDoc.id;
                 renderStudentDashboard();
             } catch (error) {
                 console.error("Student login failed:", error);
@@ -1235,9 +1259,8 @@
 
             showView('loading');
 
-            // Hardcoded teacher code for demonstration
             if (teacherCode === "superteacher") {
-                userId = "teacher-123"; // Use a consistent ID for the teacher user
+                userId = "teacher-123";
                 renderTeacherDashboard();
             } else {
                 showMessageModal('로그인 실패', '교사 코드가 올바르지 않습니다.');
@@ -1268,7 +1291,6 @@
             showView('loading');
 
             try {
-                // Check for duplicate IDs in both collections
                 const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
                 const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
                 const idQuery = query(studentsRef, where("id", "==", id));
@@ -1282,7 +1304,6 @@
                     return;
                 }
 
-                // Add new document to register collection
                 await addDoc(registerRef, {
                     grade: parseInt(grade, 10),
                     class: parseInt(className, 10),
