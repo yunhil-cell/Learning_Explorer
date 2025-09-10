@@ -245,7 +245,10 @@
                                 <i class="fa-solid fa-clipboard-list text-purple-400"></i>
                                 <span>성장일지</span>
                             </h3>
-                            <p class="text-gray-400">이곳에 성장일지 기록이 표시됩니다.</p>
+                            <div id="growth-log-container" class="space-y-4">
+                                <!-- Growth log entries will be rendered here dynamically -->
+                                <p class="text-gray-400">성장 기록이 없습니다. 모험을 시작해 보세요!</p>
+                            </div>
                         </div>
                     </div>
 
@@ -303,7 +306,7 @@
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Constants from the execution environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
@@ -473,19 +476,22 @@
                     const expPercentage = (studentData.exp / expToNextLevel) * 100;
                     document.getElementById('exp-bar').style.width = `${Math.min(expPercentage, 100)}%`;
                     document.getElementById('exp-text-display').textContent = `${studentData.exp}/${expToNextLevel}`;
-                    
+
                     // 레벨업 로직 (경험치가 충분하면 레벨업)
                     if (studentData.exp >= expToNextLevel) {
                         const newLevel = studentData.level + 1;
                         const newExp = studentData.exp - expToNextLevel;
                         const newGrowthPoints = studentData.growth_points + 5; // 레벨업 보상
-                        
+
                         updateDoc(studentDocRef, {
                             level: newLevel,
                             exp: newExp,
                             growth_points: newGrowthPoints
                         }).then(() => {
-                             showMessageModal('레벨업!', `축하합니다! 레벨 ${newLevel}이 되었습니다! 성장 포인트 5점을 얻었습니다.`);
+                            showMessageModal('레벨업!', `축하합니다! 레벨 ${newLevel}이 되었습니다! 성장 포인트 5점을 얻었습니다.`);
+                            logEvent('level_up', {
+                                newLevel: newLevel
+                            });
                         }).catch(error => {
                             console.error("Level up failed:", error);
                         });
@@ -512,9 +518,11 @@
                     document.querySelectorAll('.stat-plus-btn').forEach(button => {
                         button.addEventListener('click', handleStatIncrease);
                     });
-                    
+
                     // 퀘스트 상태 렌더링
                     renderQuest(studentData);
+                    // 성장일지 렌더링
+                    renderGrowthLog();
 
                 } else {
                     // 사용자 문서가 없으면 로그아웃
@@ -617,6 +625,90 @@
         }
 
         /**
+         * 학생의 성장일지 기록을 렌더링합니다.
+         */
+        function renderGrowthLog() {
+            const logContainer = document.getElementById('growth-log-container');
+            const logCollectionRef = collection(db, `artifacts/${appId}/public/data/students/${userId}/log`);
+            const q = query(logCollectionRef, orderBy('timestamp', 'desc'), limit(50));
+
+            onSnapshot(q, (snapshot) => {
+                logContainer.innerHTML = '';
+                if (snapshot.empty) {
+                    logContainer.innerHTML = '<p class="text-gray-400">성장 기록이 없습니다. 모험을 시작해 보세요!</p>';
+                } else {
+                    snapshot.forEach(doc => {
+                        const logData = doc.data();
+                        const logEntry = document.createElement('div');
+                        logEntry.className = 'bg-gray-700 rounded-lg p-3 shadow-sm';
+
+                        const date = new Date(logData.timestamp);
+                        const formattedTime = date.toLocaleTimeString('ko-KR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        let iconClass = '';
+                        let message = '';
+                        let colorClass = 'text-gray-300';
+
+                        switch (logData.event_type) {
+                            case 'quest_complete':
+                                iconClass = 'fa-solid fa-scroll';
+                                message = `퀘스트 "${logData.details.quest_name}"을 완료하고 경험치 ${logData.details.exp_gain}과 성장 포인트 ${logData.details.growth_point_gain}을(를) 얻었습니다.`;
+                                colorClass = 'text-emerald-400';
+                                break;
+                            case 'stat_increase':
+                                iconClass = 'fa-solid fa-arrow-up';
+                                message = `${logData.details.stat_name} 능력치가 ${logData.details.new_value} (으)로 상승했습니다.`;
+                                colorClass = 'text-blue-400';
+                                break;
+                            case 'level_up':
+                                iconClass = 'fa-solid fa-star';
+                                message = `축하합니다! 레벨 ${logData.details.newLevel}이(가) 되었습니다!`;
+                                colorClass = 'text-yellow-400';
+                                break;
+                            default:
+                                iconClass = 'fa-solid fa-info-circle';
+                                message = logData.message;
+                        }
+
+                        logEntry.innerHTML = `
+                            <div class="flex items-center space-x-2">
+                                <i class="${iconClass} text-lg ${colorClass}"></i>
+                                <p class="text-sm ${colorClass}">${message}</p>
+                            </div>
+                            <p class="text-right text-xs text-gray-400">${formattedTime}</p>
+                        `;
+                        logContainer.appendChild(logEntry);
+                    });
+                }
+            }, (error) => {
+                console.error("Failed to fetch growth log:", error);
+                logContainer.innerHTML = '<p class="text-red-400">성장 기록을 불러오는 중 오류가 발생했습니다.</p>';
+            });
+        }
+
+        /**
+         * 학생의 성장일지에 이벤트를 기록합니다.
+         * @param {string} eventType - 이벤트 유형. 예: 'quest_complete', 'level_up'
+         * @param {object} details - 이벤트 상세 정보.
+         */
+        async function logEvent(eventType, details) {
+            if (!userId) return;
+            try {
+                const logCollectionRef = collection(db, `artifacts/${appId}/public/data/students/${userId}/log`);
+                await addDoc(logCollectionRef, {
+                    event_type: eventType,
+                    details: details,
+                    timestamp: Date.now()
+                });
+            } catch (error) {
+                console.error("Failed to log event:", error);
+            }
+        }
+
+        /**
          * 퀘스트 완료 버튼 클릭 이벤트를 처리하고 보상을 지급합니다.
          */
         async function handleQuestCompletion() {
@@ -632,14 +724,16 @@
             const dailyQuestId = 'daily_diary_quest';
             const questCompleteDate = studentData.quests?.[dailyQuestId]?.completed_at;
             const today = new Date().toISOString().split('T')[0];
-            
+
             if (questCompleteDate && questCompleteDate.startsWith(today)) {
                 showMessageModal('퀘스트 완료', '오늘의 퀘스트는 이미 완료했습니다.');
                 return;
             }
 
-            const newExp = (studentData.exp || 0) + 50;
-            const newGrowthPoints = (studentData.growth_points || 0) + 1;
+            const expGain = 50;
+            const growthPointGain = 1;
+            const newExp = (studentData.exp || 0) + expGain;
+            const newGrowthPoints = (studentData.growth_points || 0) + growthPointGain;
 
             try {
                 await updateDoc(studentDocRef, {
@@ -648,6 +742,11 @@
                     [`quests.${dailyQuestId}.completed_at`]: new Date().toISOString()
                 });
                 showMessageModal('퀘스트 성공', '오늘의 퀘스트를 완료하고 보상을 받았습니다!');
+                logEvent('quest_complete', {
+                    quest_name: "오늘의 일기 쓰기",
+                    exp_gain: expGain,
+                    growth_point_gain: growthPointGain
+                });
             } catch (error) {
                 console.error("Quest completion failed:", error);
                 showMessageModal('오류', '퀘스트 완료 중 오류가 발생했습니다.');
@@ -666,11 +765,20 @@
             if (docSnap.exists()) {
                 const studentData = docSnap.data();
                 if (studentData.growth_points > 0) {
-                    studentData[stat] = (studentData[stat] || 0) + 1;
-                    studentData.growth_points -= 1;
-                    // UI에 임시 업데이트
-                    document.getElementById(`${stat}-display`).textContent = studentData[stat];
-                    document.getElementById('growth-point-display').textContent = studentData.growth_points;
+                    const newValue = (studentData[stat] || 0) + 1;
+                    const newGrowthPoints = studentData.growth_points - 1;
+
+                    await updateDoc(studentDocRef, {
+                        [stat]: newValue,
+                        growth_points: newGrowthPoints
+                    });
+                    
+                    // UI는 onSnapshot에서 자동 업데이트
+                    showMessageModal('능력치 상승', `${stat} 능력치가 ${newValue} (으)로 상승했습니다.`);
+                    logEvent('stat_increase', {
+                        stat_name: stat,
+                        new_value: newValue
+                    });
                 } else {
                     showMessageModal('포인트 부족', '성장 포인트가 부족합니다.');
                 }
@@ -704,7 +812,9 @@
                 });
 
                 // 3. register 문서의 상태 업데이트
-                await updateDoc(registerDocRef, { status: '승인됨' });
+                await updateDoc(registerDocRef, {
+                    status: '승인됨'
+                });
 
                 showMessageModal('승인 완료', `${studentData.name} 학생이 성공적으로 승인되었습니다!`);
             } catch (error) {
@@ -735,6 +845,9 @@
                     growth_points: growthPoints
                 });
                 showMessageModal('저장 완료', '능력치가 성공적으로 저장되었습니다.');
+                logEvent('stat_save', {
+                    message: '능력치 변경사항을 저장했습니다.'
+                });
             } catch (error) {
                 console.error("Failed to save stats:", error);
                 showMessageModal('저장 오류', '능력치 저장에 실패했습니다. 다시 시도해주세요.');
