@@ -472,8 +472,9 @@
             const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
             const q = query(registerRef, where("status", "==", "대기중"));
 
+            // onSnapshot에 오류 처리 콜백 추가
             onSnapshot(q, (snapshot) => {
-                pendingListContainer.innerHTML = ''; // Clear previous list
+                pendingListContainer.innerHTML = ''; // 이전 목록 지우기
                 if (snapshot.empty) {
                     pendingListContainer.innerHTML = '<p class="text-gray-400 text-center">미승인 학생이 없습니다.</p>';
                 } else {
@@ -496,6 +497,11 @@
                     });
                 }
                 showView('teacherDashboard');
+            }, (error) => {
+                console.error("Failed to fetch pending students:", error);
+                // 권한 오류 시 사용자에게 메시지 표시
+                showMessageModal('권한 오류', '미승인 학생 목록을 볼 수 있는 권한이 없습니다.');
+                showView('teacherLogin'); // 교사 로그인 화면으로 복귀
             });
         }
 
