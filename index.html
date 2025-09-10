@@ -10,10 +10,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
 
         // Firestore 디버그 로깅 활성화
         setLogLevel('debug');
@@ -23,10 +19,8 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         let db, auth, userId;
 
-        // 로컬에서 실행할 때를 위한 더미 Firebase 설정
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
+        // Firebase 프로젝트 설정 (동적 설정 우선 사용)
+        const localFirebaseConfig = {
           apiKey: "AIzaSyD743KY65s6TktWZEAQYNegclVr9zNLY0Q",
           authDomain: "learningexplorer-28737.firebaseapp.com",
           projectId: "learningexplorer-28737",
@@ -300,4 +294,3 @@
     </div>
 </body>
 </html>
-
