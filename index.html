@@ -254,7 +254,10 @@
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Constants from the execution environment
+        // NOTE: 아래 두 줄은 반드시 파이어베이스 프로젝트 정보로 수정해야 합니다!
+        // 1. YOUR_APP_ID_HERE: 깃허브 저장소 이름으로 교체하세요. (예: 'learning-explorers')
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
+        // 2. YOUR_FIREBASE_CONFIG_OBJECT_HERE: 파이어베이스 콘솔에서 복사한 객체 내용으로 교체하세요.
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyBx1gV8tiS2e83pWkDx0Y8p3Uou5z2ZwgU",
             authDomain: "learning-explorers.firebaseapp.com",
