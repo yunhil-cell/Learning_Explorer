@@ -137,7 +137,7 @@
                 </form>
             </div>
 
-            <!-- 4. Teacher Login View (Placeholder) -->
+            <!-- 4. Teacher Login View -->
             <div id="teacher-login-view" class="view hidden">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-semibold mb-4">교사 로그인</h2>
@@ -226,6 +226,21 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 6. Teacher Dashboard View -->
+            <div id="teacher-dashboard-view" class="view hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold">교사 대시보드</h2>
+                    <button id="teacher-logout-btn"
+                        class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-500 hover:text-white transition-colors">로그아웃</button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">미승인 학생 목록</h3>
+                <div id="pending-students-list" class="space-y-4">
+                    <!-- Pending student list will be rendered here dynamically -->
+                    <p class="text-gray-400 text-center" id="no-pending-students">미승인 학생이 없습니다.</p>
+                </div>
+            </div>
 
             <!-- Loading Spinner -->
             <div id="loading-spinner" class="hidden flex flex-col items-center justify-center p-8">
@@ -254,10 +269,7 @@
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Constants from the execution environment
-        // NOTE: 아래 두 줄은 반드시 파이어베이스 프로젝트 정보로 수정해야 합니다!
-        // 1. YOUR_APP_ID_HERE: 깃허브 저장소 이름으로 교체하세요. (예: 'learning-explorers')
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
-        // 2. YOUR_FIREBASE_CONFIG_OBJECT_HERE: 파이어베이스 콘솔에서 복사한 객체 내용으로 교체하세요.
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyBx1gV8tiS2e83pWkDx0Y8p3Uou5z2ZwgU",
             authDomain: "learning-explorers.firebaseapp.com",
@@ -281,6 +293,7 @@
             register: document.getElementById('register-view'),
             teacherLogin: document.getElementById('teacher-login-view'),
             dashboard: document.getElementById('student-dashboard-view'),
+            teacherDashboard: document.getElementById('teacher-dashboard-view'),
         };
         const showStudentLoginBtn = document.getElementById('show-student-login-btn');
         const showRegisterBtn = document.getElementById('show-register-btn');
@@ -293,6 +306,7 @@
         const registerForm = document.getElementById('register-form');
         const teacherLoginForm = document.getElementById('teacher-login-form');
         const logoutBtn = document.getElementById('logout-btn');
+        const teacherLogoutBtn = document.getElementById('teacher-logout-btn');
         const saveStatsBtn = document.getElementById('save-stats-btn');
         const loadingSpinner = document.getElementById('loading-spinner');
         const messageModalOverlay = document.getElementById('message-modal-overlay');
@@ -325,7 +339,7 @@
 
         /**
          * 특정 뷰를 표시하고 다른 모든 뷰는 숨깁니다.
-         * @param {string} viewName - 표시할 뷰의 이름 ('landing', 'studentLogin', 'register', 'teacherLogin', 'dashboard').
+         * @param {string} viewName - 표시할 뷰의 이름.
          */
         function showView(viewName) {
             loadingSpinner.classList.add('hidden');
@@ -446,6 +460,44 @@
                 showView('landing');
             });
         }
+        
+        /**
+         * Firestore의 실시간 데이터로 교사 대시보드를 렌더링합니다.
+         */
+        async function renderTeacherDashboard() {
+            showView('loading');
+            const pendingListContainer = document.getElementById('pending-students-list');
+            pendingListContainer.innerHTML = '';
+
+            const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
+            const q = query(registerRef, where("status", "==", "대기중"));
+
+            onSnapshot(q, (snapshot) => {
+                pendingListContainer.innerHTML = ''; // Clear previous list
+                if (snapshot.empty) {
+                    pendingListContainer.innerHTML = '<p class="text-gray-400 text-center">미승인 학생이 없습니다.</p>';
+                } else {
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const docId = doc.id;
+                        const card = document.createElement('div');
+                        card.className = 'bg-gray-800 rounded-2xl p-4 shadow-md flex items-center justify-between';
+                        card.innerHTML = `
+                            <div>
+                                <h4 class="text-lg font-semibold">${data.name} (${data.id})</h4>
+                                <p class="text-gray-400 text-sm">학년: ${data.grade}반: ${data.class} 번호: ${data.number}</p>
+                            </div>
+                            <button data-id="${docId}" class="approve-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">승인</button>
+                        `;
+                        pendingListContainer.appendChild(card);
+                    });
+                    document.querySelectorAll('.approve-btn').forEach(btn => {
+                        btn.addEventListener('click', handleApproveRequest);
+                    });
+                }
+                showView('teacherDashboard');
+            });
+        }
 
         /**
          * 능력치 증가 버튼 클릭 이벤트를 처리합니다.
@@ -467,6 +519,42 @@
                 } else {
                     showMessageModal('포인트 부족', '성장 포인트가 부족합니다.');
                 }
+            }
+        }
+        
+        /**
+         * 가입 신청을 승인하고 학생 문서로 이동시킵니다.
+         * @param {Event} event - 클릭 이벤트 객체.
+         */
+        async function handleApproveRequest(event) {
+            const docId = event.target.dataset.id;
+            try {
+                // 1. register 문서 가져오기
+                const registerDocRef = doc(db, `artifacts/${appId}/public/data/register`, docId);
+                const registerDocSnap = await getDoc(registerDocRef);
+                
+                if (!registerDocSnap.exists()) {
+                    showMessageModal('오류', '신청 정보를 찾을 수 없습니다.');
+                    return;
+                }
+                const studentData = registerDocSnap.data();
+
+                // 2. students 컬렉션에 새 문서 생성
+                const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, docId);
+                await setDoc(studentsDocRef, {
+                    ...studentData,
+                    ...initialStats,
+                    approvedBy: userId,
+                    createdAt: new Date().toISOString()
+                });
+                
+                // 3. register 문서의 상태 업데이트
+                await updateDoc(registerDocRef, { status: '승인됨' });
+
+                showMessageModal('승인 완료', `${studentData.name} 학생이 성공적으로 승인되었습니다!`);
+            } catch (error) {
+                console.error("Approval failed:", error);
+                showMessageModal('승인 오류', '학생 승인 중 오류가 발생했습니다.');
             }
         }
 
@@ -512,7 +600,7 @@
 
         // Navigation buttons
         backToLandingFromLoginBtn.addEventListener('click', () => showView('landing'));
-        backToLandingFromRegisterBtn.addEventListener('click', () => showView('landing'));
+        backToLandingFromRegisterBtn.addEventListener('click', ()(() => showView('landing'));
         backToLandingFromTeacherBtn.addEventListener('click', () => showView('landing'));
 
         // Student Login Form Submission
@@ -555,13 +643,28 @@
         });
 
         // Teacher Login Form Submission
-        teacherLoginForm.addEventListener('submit', (e) => {
+        teacherLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const code = document.getElementById('teacher-code-input').value;
-            if (code === 'superteacher') {
-                showMessageModal('교사 로그인 성공', '교사 대시보드로 이동합니다. (현재는 구현되지 않았습니다.)');
-            } else {
-                showMessageModal('교사 로그인 실패', '교사 코드가 올바르지 않습니다.');
+            const teacherCode = document.getElementById('teacher-code-input').value;
+
+            showView('loading');
+            try {
+                const teachersRef = collection(db, `artifacts/${appId}/public/data/teachers`);
+                const q = query(teachersRef, where("code", "==", teacherCode));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    showMessageModal('로그인 실패', '교사 코드가 올바르지 않습니다.');
+                    showView('teacherLogin');
+                    return;
+                }
+
+                userId = querySnapshot.docs[0].id;
+                renderTeacherDashboard();
+            } catch (error) {
+                console.error("Teacher login failed:", error);
+                showMessageModal('오류', '교사 로그인 중 오류가 발생했습니다.');
+                showView('teacherLogin');
             }
         });
 
@@ -626,6 +729,12 @@
 
         // 로그아웃 버튼
         logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+            userId = null;
+            showMessageModal('로그아웃', '성공적으로 로그아웃 되었습니다.');
+            showView('landing');
+        });
+        teacherLogoutBtn.addEventListener('click', () => {
             auth.signOut();
             userId = null;
             showMessageModal('로그아웃', '성공적으로 로그아웃 되었습니다.');
