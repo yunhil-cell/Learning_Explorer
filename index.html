@@ -521,70 +521,72 @@
                 isAuthReady = true;
 
                 console.log('Firebase initialized. User ID:', userId);
-import { collection, query, orderBy, limit, getDocs, startAfter } 
-  from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-let lastVisibleDoc = null;
-let currentStudentId = null; // 로그인 성공 시 할당
+    <script type="module">
+        import { collection, query, orderBy, limit, getDocs, startAfter } 
+            from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// 최근 3개 불러오기
-async function loadRecentGrowthLogs(studentId) {
-  const logsRef = collection(db, `artifacts/${appId}/public/data/students/${studentId}/growth_logs`);
-  const q = query(logsRef, orderBy("date", "desc"), limit(3));
-  const snapshot = await getDocs(q);
+            let lastVisibleDoc = null;
+            let currentStudentId = null; // 로그인 성공 시 할당
 
-  const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
+        // 최근 3개 불러오기
+        async function loadRecentGrowthLogs(studentId) {
+            const logsRef = collection(db, `artifacts/${appId}/public/data/students/${studentId}/growth_logs`);
+            const q = query(logsRef, orderBy("date", "desc"), limit(3));
+            const snapshot = await getDocs(q);
 
-  renderLogs(logs, false);
+            const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
 
-  document.getElementById("load-more-btn").classList.toggle("hidden", snapshot.size < 3);
-}
+            renderLogs(logs, false);
+            
+            document.getElementById("load-more-btn").classList.toggle("hidden", snapshot.size < 3);
+        }
 
-// 더보기 불러오기
-async function loadMoreGrowthLogs(studentId) {
-  if (!lastVisibleDoc) return;
+        // 더보기 불러오기
+        async function loadMoreGrowthLogs(studentId) {
+            if (!lastVisibleDoc) return;
+            
+            const logsRef = collection(db, `artifacts/${appId}/public/data/students/${studentId}/growth_logs`);
+            const q = query(logsRef, orderBy("date", "desc"), startAfter(lastVisibleDoc), limit(3));
+            const snapshot = await getDocs(q);
 
-  const logsRef = collection(db, `artifacts/${appId}/public/data/students/${studentId}/growth_logs`);
-  const q = query(logsRef, orderBy("date", "desc"), startAfter(lastVisibleDoc), limit(3));
-  const snapshot = await getDocs(q);
+            const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
 
-  const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
+            renderLogs(logs, true);
+            
+            if (snapshot.size < 3) {
+                document.getElementById("load-more-btn").classList.add("hidden");
+            }
+        }
 
-  renderLogs(logs, true);
+        // 화면 렌더링
+        function renderLogs(logs, append) {
+            const container = document.getElementById("growth-log-list");
+            if (!append) container.innerHTML = "";
+            
+            if (logs.length === 0 && !append) {
+                container.innerHTML = `<p class="text-gray-400">성장 기록이 없습니다. 모험을 시작해 보세요!</p>`;
+                return;
+            }
+            
+            logs.forEach(log => {
+                const item = document.createElement("div");
+                item.className = "p-4 border border-gray-700 rounded-lg bg-gray-900 shadow";
+                item.innerHTML = `
+                <h4 class="font-semibold text-lg text-white">${log.title || "제목 없음"}</h4>
+                <p class="text-sm text-gray-400">${log.date ? new Date(log.date).toLocaleDateString() : ""}</p>
+                <p class="mt-2 text-gray-200 whitespace-pre-line">${log.content || ""}</p>
+                `;
+                container.appendChild(item);
+            });
+        }
 
-  if (snapshot.size < 3) {
-    document.getElementById("load-more-btn").classList.add("hidden");
-  }
-}
-
-// 화면 렌더링
-function renderLogs(logs, append) {
-  const container = document.getElementById("growth-log-list");
-  if (!append) container.innerHTML = "";
-
-  if (logs.length === 0 && !append) {
-    container.innerHTML = `<p class="text-gray-400">성장 기록이 없습니다. 모험을 시작해 보세요!</p>`;
-    return;
-  }
-
-  logs.forEach(log => {
-    const item = document.createElement("div");
-    item.className = "p-4 border border-gray-700 rounded-lg bg-gray-900 shadow";
-    item.innerHTML = `
-      <h4 class="font-semibold text-lg text-white">${log.title || "제목 없음"}</h4>
-      <p class="text-sm text-gray-400">${log.date ? new Date(log.date).toLocaleDateString() : ""}</p>
-      <p class="mt-2 text-gray-200 whitespace-pre-line">${log.content || ""}</p>
-    `;
-    container.appendChild(item);
-  });
-}
-
-// 더보기 버튼 이벤트
-document.getElementById("load-more-btn").addEventListener("click", () => {
-  loadMoreGrowthLogs(currentStudentId);
-});
+        // 더보기 버튼 이벤트
+                document.getElementById("load-more-btn").addEventListener("click", () => {
+                    loadMoreGrowthLogs(currentStudentId);
+                });
                 
                 // Initialize teacher password if it doesn't exist
                 const teacherDocRef = doc(db, `artifacts/${appId}/public/data/teachers`, 'teacher_password');
@@ -1571,4 +1573,5 @@ document.getElementById("load-more-btn").addEventListener("click", () => {
 </body>
 
 </html>
+
 
