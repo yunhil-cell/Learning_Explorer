@@ -384,7 +384,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit, serverTimestamp, Timestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+        import { collection, query, orderBy, limit, getDocs, startAfter } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
         // Constants from the execution environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -523,8 +524,6 @@
                 console.log('Firebase initialized. User ID:', userId);
 
 
-        import { collection, query, orderBy, limit, getDocs, startAfter } 
-            from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
             let lastVisibleDoc = null;
             let currentStudentId = null; // 로그인 성공 시 할당
@@ -1573,6 +1572,7 @@
 </body>
 
 </html>
+
 
 
 
