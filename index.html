@@ -946,7 +946,7 @@
             e.preventDefault();
             const logText = document.getElementById('growth-log-text').value.trim();
             const submitButton = e.target.querySelector('button[type="submit"]');
-
+            
             if (!logText) {
                 showMessageModal('오류', '내용을 입력해 주세요.');
                 return;
@@ -960,8 +960,17 @@
             submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 전송 중...`;
 
             try {
-                // Check if a log has already been submitted today
                 const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+                const studentDoc = await getDoc(studentDocRef);
+                
+                if (!studentDoc.exists()) {
+                    showMessageModal('오류', '사용자 정보를 찾을 수 없습니다.');
+                    return;
+                }
+                const studentData = studentDoc.data();
+
+                // Check if a log has already been submitted today
                 const todayStart = new Date();
                 todayStart.setHours(0, 0, 0, 0);
                 const q = query(logsCollectionRef,
@@ -974,15 +983,6 @@
                     showMessageModal('제출 실패', '오늘은 이미 성장일지를 제출했습니다.');
                     return;
                 }
-
-                // Get student data for log entry
-                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
-                const studentDoc = await getDoc(studentDocRef);
-                if (!studentDoc.exists()) {
-                    showMessageModal('오류', '사용자 정보를 찾을 수 없습니다.');
-                    return;
-                }
-                const studentData = studentDoc.data();
                 
                 await addDoc(logsCollectionRef, {
                     student_id: userId,
@@ -992,6 +992,7 @@
                     timestamp: serverTimestamp()
                 });
 
+                document.getElementById('growth-log-text').value = '';
                 showMessageModal('전송 완료', '성장일지가 교사에게 전송되었습니다. 승인을 기다려 주세요!');
             } catch (error) {
                 console.error("Growth log submission failed:", error);
