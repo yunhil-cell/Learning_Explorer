@@ -497,7 +497,11 @@
          * Renders the student dashboard with real-time data from Firestore.
          */
         function renderStudentDashboard() {
-            if (!userId) return;
+            if (!userId) {
+                showMessageModal('오류', '로그인 정보가 유효하지 않습니다.');
+                showView('landing');
+                return;
+            }
 
             showView('loading');
             const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
@@ -559,7 +563,7 @@
                     });
 
                     renderQuest(studentDataCache);
-                    renderGrowthLogSubmissionForm(studentDataCache);
+                    setupGrowthLogUIListener();
                     renderGrowthLog();
 
                 } else {
@@ -714,30 +718,32 @@
         }
 
         /**
-         * Renders the student's growth log submission form and current status.
-         * @param {Object} studentData - Student data.
+         * Sets up a real-time listener for the growth log UI state.
          */
-        function renderGrowthLogSubmissionForm(studentData) {
-            const statusContainer = document.getElementById('growth-log-status');
+        function setupGrowthLogUIListener() {
+            if (!userId) return;
+
             const submissionForm = document.getElementById('growth-log-form');
-            
-            // Check if a growth log was already submitted today
+            const statusContainer = document.getElementById('growth-log-status');
+            const logTextarea = document.getElementById('growth-log-text');
+
             const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
+
             const q = query(logsCollectionRef, 
                 where("student_id", "==", userId),
                 where("timestamp", ">=", todayStart)
             );
 
-            getDocs(q).then((querySnapshot) => {
+            onSnapshot(q, (querySnapshot) => {
                 if (!querySnapshot.empty) {
                     submissionForm.classList.add('hidden');
                     statusContainer.classList.remove('hidden');
                     const logData = querySnapshot.docs[0].data();
                     let statusText = '';
                     let statusColor = '';
-
+                    
                     switch (logData.status) {
                         case 'pending':
                             statusText = `<i class="fa-solid fa-hourglass-half text-yellow-400 mr-2"></i>승인 대기 중...`;
@@ -757,9 +763,8 @@
                 } else {
                     submissionForm.classList.remove('hidden');
                     statusContainer.classList.add('hidden');
+                    logTextarea.value = '';
                 }
-            }).catch(error => {
-                console.error("Error checking for existing log:", error);
             });
         }
         
@@ -844,6 +849,10 @@
          * Handles quest completion and awards the user.
          */
         async function handleQuestCompletion() {
+            if (!userId) {
+                showMessageModal('오류', '로그인 정보가 유효하지 않습니다.');
+                return;
+            }
             const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
             const docSnap = await getDoc(studentDocRef);
 
@@ -892,28 +901,21 @@
         async function handleGrowthLogSubmission(e) {
             e.preventDefault();
             const logText = document.getElementById('growth-log-text').value.trim();
+            const submitButton = e.target.querySelector('button[type="submit"]');
 
             if (!logText) {
                 showMessageModal('오류', '내용을 입력해 주세요.');
                 return;
             }
+            if (!userId) {
+                showMessageModal('오류', '로그인 정보가 유효하지 않습니다.');
+                return;
+            }
 
-            // Check if a growth log was already submitted today
-            const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-            const q = query(logsCollectionRef, 
-                where("student_id", "==", userId),
-                where("timestamp", ">=", todayStart)
-            );
-            
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 전송 중...`;
+
             try {
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    showMessageModal('제출 불가', '오늘의 성장일지를 이미 제출했습니다. 하루 한 번만 제출할 수 있습니다.');
-                    return;
-                }
-
                 const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                 const studentDoc = await getDoc(studentDocRef);
                 if (!studentDoc.exists()) {
@@ -921,8 +923,9 @@
                     return;
                 }
                 const studentData = studentDoc.data();
-
-                const newLogRef = await addDoc(collection(db, `artifacts/${appId}/public/data/growth_logs`), {
+                
+                const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+                await addDoc(logsCollectionRef, {
                     student_id: userId,
                     student_name: studentData.name,
                     content: logText,
@@ -930,15 +933,13 @@
                     timestamp: serverTimestamp()
                 });
 
-                await updateDoc(studentDocRef, {
-                    latest_log: newLogRef.id
-                });
-                
-                document.getElementById('growth-log-text').value = '';
                 showMessageModal('전송 완료', '성장일지가 교사에게 전송되었습니다. 승인을 기다려 주세요!');
             } catch (error) {
                 console.error("Growth log submission failed:", error);
                 showMessageModal('오류', '성장일지 전송 중 오류가 발생했습니다.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = `기록 전송`;
             }
         }
 
@@ -1101,6 +1102,10 @@
          * Saves the updated stats to Firestore.
          */
         async function saveStats() {
+            if (!userId) {
+                showMessageModal('오류', '로그인 정보가 유효하지 않습니다.');
+                return;
+            }
             try {
                 const statElements = document.getElementById('stats-container').querySelectorAll('span');
                 const updatedStats = {};
@@ -1147,10 +1152,8 @@
 
         // Student Tab buttons
         tabInfoBtn.addEventListener('click', () => {
+            document.querySelectorAll('#dashboard-sections > div').forEach(div => div.classList.add('hidden'));
             userInfoSection.classList.remove('hidden');
-            questSection.classList.add('hidden');
-            logSection.classList.add('hidden');
-            shopSection.classList.add('hidden');
             document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
                 btn.classList.remove('border-emerald-400', 'text-emerald-400');
                 btn.classList.add('border-transparent', 'text-gray-400');
@@ -1159,33 +1162,30 @@
             tabInfoBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
         tabQuestBtn.addEventListener('click', () => {
-            userInfoSection.classList.add('hidden');
+            document.querySelectorAll('#dashboard-sections > div').forEach(div => div.classList.add('hidden'));
             questSection.classList.remove('hidden');
-            logSection.classList.add('hidden');
-            shopSection.classList.add('hidden');
             document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
                 btn.classList.remove('border-emerald-400', 'text-emerald-400');
                 btn.classList.add('border-transparent', 'text-gray-400');
             });
             tabQuestBtn.classList.remove('border-transparent', 'text-gray-400');
             tabQuestBtn.classList.add('border-emerald-400', 'text-emerald-400');
+            renderQuest(studentDataCache);
         });
         tabLogBtn.addEventListener('click', () => {
-            userInfoSection.classList.add('hidden');
-            questSection.classList.add('hidden');
+            document.querySelectorAll('#dashboard-sections > div').forEach(div => div.classList.add('hidden'));
             logSection.classList.remove('hidden');
-            shopSection.classList.add('hidden');
             document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
                 btn.classList.remove('border-emerald-400', 'text-emerald-400');
                 btn.classList.add('border-transparent', 'text-gray-400');
             });
             tabLogBtn.classList.remove('border-transparent', 'text-gray-400');
             tabLogBtn.classList.add('border-emerald-400', 'text-emerald-400');
+            setupGrowthLogUIListener();
+            renderGrowthLog();
         });
         tabShopBtn.addEventListener('click', () => {
-            userInfoSection.classList.add('hidden');
-            questSection.classList.add('hidden');
-            logSection.classList.add('hidden');
+            document.querySelectorAll('#dashboard-sections > div').forEach(div => div.classList.add('hidden'));
             shopSection.classList.remove('hidden');
             document.querySelectorAll('#student-dashboard-view .border-b-2').forEach(btn => {
                 btn.classList.remove('border-emerald-400', 'text-emerald-400');
@@ -1194,83 +1194,116 @@
             tabShopBtn.classList.remove('border-transparent', 'text-gray-400');
             tabShopBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
-        
+
         // Teacher Tab buttons
         teacherTabPendingStudentsBtn.addEventListener('click', () => {
+            document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
             teacherPendingStudentsSection.classList.remove('hidden');
-            teacherPendingLogsSection.classList.add('hidden');
+            document.querySelectorAll('#teacher-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
             teacherTabPendingStudentsBtn.classList.remove('border-transparent', 'text-gray-400');
             teacherTabPendingStudentsBtn.classList.add('border-emerald-400', 'text-emerald-400');
-            teacherTabPendingLogsBtn.classList.remove('border-emerald-400', 'text-emerald-400');
-            teacherTabPendingLogsBtn.classList.add('border-transparent', 'text-gray-400');
         });
         teacherTabPendingLogsBtn.addEventListener('click', () => {
-            teacherPendingStudentsSection.classList.add('hidden');
+            document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
             teacherPendingLogsSection.classList.remove('hidden');
-            teacherTabPendingStudentsBtn.classList.remove('border-emerald-400', 'text-emerald-400');
-            teacherTabPendingStudentsBtn.classList.add('border-transparent', 'text-gray-400');
+            document.querySelectorAll('#teacher-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
             teacherTabPendingLogsBtn.classList.remove('border-transparent', 'text-gray-400');
             teacherTabPendingLogsBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
 
-        // Student Login Form Submission
+        // Forms
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const studentId = document.getElementById('student-id-input').value;
             const password = document.getElementById('student-password-input').value;
 
-            showView('loading');
-
             try {
-                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
-                const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
-                const studentsQuery = query(studentsRef, where("id", "==", studentId));
-                const registerQuery = query(registerRef, where("id", "==", studentId));
+                showView('loading');
+                const q = query(collection(db, `artifacts/${appId}/public/data/students`), where("id", "==", studentId), where("password", "==", password));
+                const querySnapshot = await getDocs(q);
 
-                const [studentsSnapshot, registerSnapshot] = await Promise.all([
-                    getDocs(studentsQuery),
-                    getDocs(registerQuery)
-                ]);
-
-                if (!studentsSnapshot.empty) {
-                    const studentDoc = studentsSnapshot.docs[0];
-                    const studentData = studentDoc.data();
-                    if (studentData.password === password) {
-                        userId = studentDoc.id;
-                        renderStudentDashboard();
-                        return;
-                    }
+                if (querySnapshot.empty) {
+                    showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
+                    showView('studentLogin');
+                    return;
                 }
 
-                if (!registerSnapshot.empty) {
-                    const registerDoc = registerSnapshot.docs[0];
-                    const registerData = registerDoc.data();
-                    if (registerData.password === password) {
-                        showMessageModal('로그인 실패', '회원가입 승인 대기 중입니다.');
-                        showView('studentLogin');
-                        return;
-                    }
-                }
-
-                showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
-                showView('studentLogin');
-
+                const studentDoc = querySnapshot.docs[0];
+                userId = studentDoc.id;
+                renderStudentDashboard();
             } catch (error) {
                 console.error("Student login failed:", error);
-                showMessageModal('오류', '로그인 중 오류가 발생했습니다.');
+                showMessageModal('로그인 오류', '로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
                 showView('studentLogin');
             }
         });
 
-        // Teacher Login Form Submission
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('register-id').value;
+            const password = document.getElementById('register-password').value;
+            const name = document.getElementById('register-name').value;
+            const grade = parseInt(document.getElementById('register-grade').value);
+            const studentClass = parseInt(document.getElementById('register-class').value);
+            const number = parseInt(document.getElementById('register-number').value);
+            const charName = document.getElementById('register-char-name').value;
+
+            if (password.length < 4) {
+                showMessageModal('회원가입 오류', '비밀번호는 4자 이상이어야 합니다.');
+                return;
+            }
+
+            try {
+                showView('loading');
+                const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
+                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+                const qRegister = query(registerRef, where("id", "==", id));
+                const qStudents = query(studentsRef, where("id", "==", id));
+
+                const registerSnapshot = await getDocs(qRegister);
+                const studentsSnapshot = await getDocs(qStudents);
+
+                if (!registerSnapshot.empty || !studentsSnapshot.empty) {
+                    showMessageModal('회원가입 오류', '이미 존재하는 아이디입니다. 다른 아이디를 사용해주세요.');
+                    showView('register');
+                    return;
+                }
+
+                await addDoc(registerRef, {
+                    id: id,
+                    password: password,
+                    name: name,
+                    grade: grade,
+                    class: studentClass,
+                    number: number,
+                    character_name: charName,
+                    status: '대기중',
+                    quests: {},
+                    createdAt: serverTimestamp()
+                });
+
+                showMessageModal('가입 신청 완료', '가입 신청이 완료되었습니다. 교사의 승인을 기다려 주세요!');
+                showView('landing');
+            } catch (error) {
+                console.error("Registration failed:", error);
+                showMessageModal('회원가입 오류', '회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+                showView('register');
+            }
+        });
+
         teacherLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const teacherCode = document.getElementById('teacher-code-input').value;
+            const teacherDocRef = doc(db, `artifacts/${appId}/public/data/teachers`, 'teacher_password');
+            const docSnap = await getDoc(teacherDocRef);
 
-            showView('loading');
-
-            if (teacherCode === "superteacher") {
-                userId = "teacher-123";
+            if (docSnap.exists() && docSnap.data().password === teacherCode) {
                 renderTeacherDashboard();
             } else {
                 showMessageModal('로그인 실패', '교사 코드가 올바르지 않습니다.');
@@ -1278,79 +1311,20 @@
             }
         });
 
-        // Registration Form Submission
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const grade = document.getElementById('register-grade').value;
-            const className = document.getElementById('register-class').value;
-            const number = document.getElementById('register-number').value;
-            const name = document.getElementById('register-name').value;
-            const id = document.getElementById('register-id').value;
-            const password = document.getElementById('register-password').value;
-            const characterName = document.getElementById('register-char-name').value;
-
-            if (!grade || !className || !number || !name || !id || !password || !characterName) {
-                showMessageModal('오류', '모든 필드를 채워주세요.');
-                return;
-            }
-            if (password.length < 4) {
-                showMessageModal('오류', '비밀번호는 최소 4자 이상이어야 합니다.');
-                return;
-            }
-
-            showView('loading');
-
-            try {
-                const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
-                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
-                const idQuery = query(studentsRef, where("id", "==", id));
-                const idQuery2 = query(registerRef, where("id", "==", id));
-
-                const [studentsSnapshot, registerSnapshot] = await Promise.all([getDocs(idQuery), getDocs(idQuery2)]);
-
-                if (!studentsSnapshot.empty || !registerSnapshot.empty) {
-                    showMessageModal('가입 실패', '이미 사용 중인 아이디입니다.');
-                    showView('register');
-                    return;
-                }
-
-                await addDoc(registerRef, {
-                    grade: parseInt(grade, 10),
-                    class: parseInt(className, 10),
-                    number: parseInt(number, 10),
-                    name: name,
-                    id: id,
-                    password: password,
-                    character_name: characterName,
-                    status: '대기중'
-                });
-
-                showMessageModal('가입 신청 완료', '가입 신청이 접수되었습니다. 교사의 승인 후 로그인할 수 있습니다.');
-                showView('studentLogin');
-
-            } catch (error) {
-                console.error("Registration failed:", error);
-                showMessageModal('오류', '가입 신청 중 오류가 발생했습니다.');
-                showView('register');
-            }
-        });
-
-        // Logout buttons
         logoutBtn.addEventListener('click', () => {
             auth.signOut();
-            userId = null;
-            showMessageModal('로그아웃', '성공적으로 로그아웃 되었습니다.');
             showView('landing');
+            userId = null;
+            studentDataCache = null;
         });
+
         teacherLogoutBtn.addEventListener('click', () => {
             auth.signOut();
-            userId = null;
-            showMessageModal('로그아웃', '성공적으로 로그아웃 되었습니다.');
             showView('landing');
         });
-        saveStatsBtn.addEventListener('click', saveStats);
 
-        // Growth log submission listener
+        // Student Dashboard Actions
+        saveStatsBtn.addEventListener('click', saveStats);
         document.getElementById('growth-log-form').addEventListener('submit', handleGrowthLogSubmission);
     </script>
 </body>
