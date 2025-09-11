@@ -521,6 +521,19 @@
                         password: 'superteacher'
                     });
                 }
+                
+                // Initialize dummy quest if it doesn't exist
+                const questDocRef = doc(db, `artifacts/${appId}/public/data/quests`, 'daily_diary_quest');
+                const questDocSnap = await getDoc(questDocRef);
+                if (!questDocSnap.exists()) {
+                    await setDoc(questDocRef, {
+                        title: "오늘의 일기 쓰기",
+                        description: "오늘 있었던 일을 간단히 기록해 보세요.",
+                        exp_reward: 50,
+                        gp_reward: 1,
+                        type: "daily"
+                    });
+                }
 
                 showView('landing');
             } catch (error) {
@@ -700,41 +713,55 @@
          * Renders the student's daily quest status and completed quests.
          * @param {Object} studentData - The student's data from Firestore.
          */
-        function renderQuest(studentData) {
+        async function renderQuest(studentData) {
             const dailyQuestContainer = document.getElementById('daily-quest-container');
             const completedQuestsContainer = document.getElementById('completed-quests-container');
-            const dailyQuestId = 'daily_diary_quest';
-            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at;
-            const today = new Date().toISOString().split('T')[0];
-
-            // Render Daily Quest
+            
             dailyQuestContainer.innerHTML = '';
-            const isCompletedToday = questCompletedAt && questCompletedAt.toDate().toISOString().split('T')[0] === today;
-            if (isCompletedToday) {
-                const card = document.createElement('div');
-                card.className = 'bg-gray-700 rounded-lg p-4 flex items-center justify-between';
-                card.innerHTML = `
-                    <div>
-                        <h4 class="text-lg font-semibold text-gray-300">오늘의 일기 쓰기</h4>
-                        <p class="text-sm text-emerald-400">퀘스트 완료!</p>
-                    </div>
-                    <i class="fa-solid fa-check-circle text-2xl text-emerald-400"></i>
-                `;
-                dailyQuestContainer.appendChild(card);
-            } else {
-                const card = document.createElement('div');
-                card.className = 'bg-gray-700 rounded-lg p-4 space-y-4';
-                card.innerHTML = `
-                    <h4 class="text-lg font-semibold text-white">오늘의 일기 쓰기</h4>
-                    <p class="text-gray-300">오늘 있었던 일을 간단히 기록해 보세요. 경험치 +50, 성장 포인트 +1</p>
-                    <button id="complete-quest-btn" class="w-full p-2 rounded-lg text-white font-semibold btn-primary">퀘스트 완료</button>
-                `;
-                dailyQuestContainer.appendChild(card);
-                document.getElementById('complete-quest-btn').addEventListener('click', handleQuestCompletion);
-            }
-
-            // Render Completed Quests
             completedQuestsContainer.innerHTML = '';
+
+            // Get a single daily quest from Firestore
+            const questsRef = collection(db, `artifacts/${appId}/public/data/quests`);
+            const q = query(questsRef, where("type", "==", "daily"), limit(1));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+                dailyQuestContainer.innerHTML = '<p class="text-gray-400">오늘의 퀘스트가 없습니다.</p>';
+            } else {
+                const questDoc = querySnapshot.docs[0];
+                const questData = questDoc.data();
+                const questId = questDoc.id;
+
+                const questCompletedAt = studentData.quests?.[questId]?.completed_at;
+                const today = new Date().toISOString().split('T')[0];
+
+                const isCompletedToday = questCompletedAt && questCompletedAt.toDate().toISOString().split('T')[0] === today;
+                
+                if (isCompletedToday) {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-700 rounded-lg p-4 flex items-center justify-between';
+                    card.innerHTML = `
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-300">${questData.title}</h4>
+                            <p class="text-sm text-emerald-400">퀘스트 완료!</p>
+                        </div>
+                        <i class="fa-solid fa-check-circle text-2xl text-emerald-400"></i>
+                    `;
+                    dailyQuestContainer.appendChild(card);
+                } else {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-700 rounded-lg p-4 space-y-4';
+                    card.innerHTML = `
+                        <h4 class="text-lg font-semibold text-white">${questData.title}</h4>
+                        <p class="text-gray-300">${questData.description} (경험치 +${questData.exp_reward}, 성장 포인트 +${questData.gp_reward})</p>
+                        <button id="complete-quest-btn" data-quest-id="${questId}" class="w-full p-2 rounded-lg text-white font-semibold btn-primary">퀘스트 완료</button>
+                    `;
+                    dailyQuestContainer.appendChild(card);
+                    document.getElementById('complete-quest-btn').addEventListener('click', handleQuestCompletion);
+                }
+            }
+            
+            // Render Completed Quests
             if (studentData.quests) {
                 const completedQuests = Object.entries(studentData.quests).filter(([key, value]) => value.completed_at);
                 if (completedQuests.length > 0) {
@@ -742,7 +769,7 @@
                     completedQuests.forEach(([key, value]) => {
                         const questCard = document.createElement('div');
                         questCard.className = 'bg-gray-700 rounded-lg p-3 shadow-sm';
-                        const questName = key === dailyQuestId ? "오늘의 일기 쓰기" : key;
+                        const questName = key === "daily_diary_quest" ? "오늘의 일기 쓰기" : key;
                         const date = value.completed_at.toDate().toLocaleDateString();
                         questCard.innerHTML = `
                             <div class="flex items-center justify-between">
@@ -892,22 +919,30 @@
         /**
          * Handles quest completion and awards the user.
          */
-        async function handleQuestCompletion() {
+        async function handleQuestCompletion(e) {
             if (!userId) {
                 showMessageModal('오류', '로그인 정보가 유효하지 않습니다.');
                 return;
             }
-            const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
-            const docSnap = await getDoc(studentDocRef);
+            const questId = e.target.dataset.questId;
 
-            if (!docSnap.exists()) {
-                showMessageModal('오류', '사용자 데이터를 찾을 수 없습니다.');
+            const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+            const questDocRef = doc(db, `artifacts/${appId}/public/data/quests`, questId);
+            
+            const [studentDocSnap, questDocSnap] = await Promise.all([
+                getDoc(studentDocRef),
+                getDoc(questDocRef)
+            ]);
+
+            if (!studentDocSnap.exists() || !questDocSnap.exists()) {
+                showMessageModal('오류', '사용자 또는 퀘스트 데이터를 찾을 수 없습니다.');
                 return;
             }
 
-            const studentData = docSnap.data();
-            const dailyQuestId = 'daily_diary_quest';
-            const questCompletedAt = studentData.quests?.[dailyQuestId]?.completed_at;
+            const studentData = studentDocSnap.data();
+            const questData = questDocSnap.data();
+            
+            const questCompletedAt = studentData.quests?.[questId]?.completed_at;
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -916,8 +951,8 @@
                 return;
             }
 
-            const expGain = 50;
-            const growthPointGain = 1;
+            const expGain = questData.exp_reward;
+            const growthPointGain = questData.gp_reward;
             const newExp = (studentData.exp || 0) + expGain;
             const newGrowthPoints = (studentData.growth_points || 0) + growthPointGain;
 
@@ -925,11 +960,11 @@
                 await updateDoc(studentDocRef, {
                     exp: newExp,
                     growth_points: newGrowthPoints,
-                    [`quests.${dailyQuestId}.completed_at`]: serverTimestamp()
+                    [`quests.${questId}.completed_at`]: serverTimestamp()
                 });
                 showMessageModal('퀘스트 성공', '오늘의 퀘스트를 완료하고 보상을 받았습니다!');
                 logEvent(userId, 'quest_complete', {
-                    quest_name: "오늘의 일기 쓰기",
+                    quest_name: questData.title,
                     exp_gain: expGain,
                     growth_point_gain: growthPointGain
                 });
