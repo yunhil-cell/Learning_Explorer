@@ -522,7 +522,7 @@
                     });
                 }
                 
-                // Initialize dummy quest if it doesn't exist
+                // Initialize a base quest in the database if it doesn't exist
                 const questDocRef = doc(db, `artifacts/${appId}/public/data/quests`, 'daily_diary_quest');
                 const questDocSnap = await getDoc(questDocRef);
                 if (!questDocSnap.exists()) {
@@ -981,13 +981,9 @@
             e.preventDefault();
             const logText = document.getElementById('growth-log-text').value.trim();
             const submitButton = e.target.querySelector('button[type="submit"]');
-            
+
             if (!logText) {
                 showMessageModal('오류', '내용을 입력해 주세요.');
-                return;
-            }
-            if (!userId) {
-                showMessageModal('오류', '로그인 정보가 유효하지 않습니다.');
                 return;
             }
 
@@ -995,10 +991,15 @@
             submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 전송 중...`;
 
             try {
+                if (!userId) {
+                    showMessageModal('오류', '로그인 정보가 유효하지 않습니다.');
+                    return;
+                }
+
                 const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
                 const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                 const studentDoc = await getDoc(studentDocRef);
-                
+
                 if (!studentDoc.exists()) {
                     showMessageModal('오류', '사용자 정보를 찾을 수 없습니다.');
                     return;
@@ -1031,7 +1032,7 @@
                 showMessageModal('전송 완료', '성장일지가 교사에게 전송되었습니다. 승인을 기다려 주세요!');
             } catch (error) {
                 console.error("Growth log submission failed:", error);
-                showMessageModal('오류', '성장일지 전송 중 오류가 발생했습니다.');
+                showMessageModal('오류', `성장일지 전송 중 오류가 발생했습니다: ${error.message}`);
             } finally {
                 submitButton.disabled = false;
                 submitButton.innerHTML = `기록 전송`;
