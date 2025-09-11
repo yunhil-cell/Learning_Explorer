@@ -616,6 +616,7 @@
                     renderQuest(studentDataCache);
                     setupGrowthLogUIListener();
                     renderGrowthLog();
+                    listenForRewards();
 
                 } else {
                     console.error("Student data not found for user ID:", userId);
@@ -630,6 +631,69 @@
                 showView('landing');
             });
         }
+        
+        /**
+         * Listens for growth log approvals and applies rewards.
+         */
+        function listenForRewards() {
+            if (!userId) return;
+
+            const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+            const q = query(logsCollectionRef,
+                where("student_id", "==", userId),
+                where("status", "in", ['approved', 'rejected']),
+                where("rewarded", "==", false)
+            );
+
+            onSnapshot(q, async (querySnapshot) => {
+                if (!isAuthReady) return;
+
+                if (!querySnapshot.empty) {
+                    for (const docSnap of querySnapshot.docs) {
+                        const logData = docSnap.data();
+                        const logDocRef = docSnap.ref;
+                        const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+
+                        try {
+                            const studentDocSnap = await getDoc(studentDocRef);
+                            const studentData = studentDocSnap.data();
+
+                            let expGain = 0;
+                            let growthPointGain = 0;
+
+                            if (logData.status === 'approved') {
+                                expGain = 50;
+                                growthPointGain = 1;
+                                showMessageModal('축하합니다!', `교사에게 성장일지 '최고' 점수를 받았습니다! 경험치 ${expGain}을 얻었습니다.`);
+                            } else if (logData.status === 'rejected') {
+                                expGain = 20;
+                                showMessageModal('확인됨', `교사가 성장일지를 확인했습니다. 경험치 ${expGain}을 얻었습니다.`);
+                            }
+
+                            const newExp = (studentData.exp || 0) + expGain;
+                            const newGrowthPoints = (studentData.growth_points || 0) + growthPointGain;
+                            
+                            await updateDoc(studentDocRef, {
+                                exp: newExp,
+                                growth_points: newGrowthPoints
+                            });
+
+                            await updateDoc(logDocRef, { rewarded: true });
+
+                            logEvent(userId, `growth_log_reward_${logData.status}`, {
+                                logId: docSnap.id,
+                                exp_gain: expGain,
+                                growth_point_gain: growthPointGain
+                            });
+
+                        } catch (error) {
+                            console.error("Failed to apply reward:", error);
+                        }
+                    }
+                }
+            });
+        }
+
 
         /**
          * Renders the teacher dashboard with real-time data from Firestore.
@@ -802,6 +866,9 @@
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
 
+            // NOTE: Firestore requires a composite index for this query.
+            // If you get a "The query requires an index" error, follow the link in the console
+            // to create the index. It is a one-time setup for your database.
             const q = query(logsCollectionRef,
                 where("student_id", "==", userId),
                 where("timestamp", ">=", todayStart)
@@ -845,6 +912,10 @@
         function renderGrowthLog() {
             const logContainer = document.getElementById('growth-log-container');
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+
+            // NOTE: Firestore requires a composite index for this query.
+            // If you get a "The query requires an index" error, follow the link in the console
+            // to create the index. It is a one-time setup for your database.
             const q = query(logCollectionRef,
                 where("student_id", "==", userId),
                 orderBy('timestamp', 'desc'), limit(50));
@@ -1025,6 +1096,7 @@
                     student_name: studentData.name,
                     content: logText,
                     status: 'pending',
+                    rewarded: false, // Add a flag to track if the reward has been given
                     timestamp: serverTimestamp()
                 });
 
@@ -1045,43 +1117,20 @@
          */
         async function handleGrowthLogApproval(e) {
             const logId = e.target.dataset.id;
-            const studentId = e.target.dataset.studentId;
-
             try {
                 const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
-                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
-
                 const logDocSnap = await getDoc(logDocRef);
-                const currentStatus = logDocSnap.data()?.status;
-                if (currentStatus !== 'pending') {
-                    showMessageModal('이미 처리됨', '이미 승인되었거나 거절된 일지입니다.');
+
+                if (!logDocSnap.exists()) {
+                    showMessageModal('오류', '성장일지 정보를 찾을 수 없습니다.');
                     return;
                 }
 
                 await updateDoc(logDocRef, { status: 'approved' });
-
-                const studentDoc = await getDoc(studentDocRef);
-                const studentData = studentDoc.data();
-
-                const newExp = (studentData.exp || 0) + 50;
-                const newGrowthPoints = (studentData.growth_points || 0) + 1;
-
-                await updateDoc(studentDocRef, {
-                    exp: newExp,
-                    growth_points: newGrowthPoints
-                });
-
-                logEvent(studentId, 'growth_log_approved', {
-                    logId: logId,
-                    exp_gain: 50,
-                    growth_point_gain: 1
-                });
-
-                showMessageModal('최고!', '성장일지가 최고 점수를 받았습니다. 학생에게 보상이 지급됩니다.');
-
+                showMessageModal('승인 완료', '성장일지가 최고 점수를 받았습니다. 학생에게 보상이 지급될 예정입니다!');
             } catch (error) {
                 console.error("Growth log approval failed:", error);
-                showMessageModal('오류', '최고 점수 처리 중 오류가 발생했습니다.');
+                showMessageModal('오류', '승인 처리 중 오류가 발생했습니다.');
             }
         }
 
@@ -1091,37 +1140,17 @@
          */
         async function handleGrowthLogRejection(e) {
             const logId = e.target.dataset.id;
-            const studentId = e.target.dataset.studentId;
-
             try {
                 const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
-                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
-
                 const logDocSnap = await getDoc(logDocRef);
-                const currentStatus = logDocSnap.data()?.status;
-                if (currentStatus !== 'pending') {
-                    showMessageModal('이미 처리됨', '이미 승인되었거나 거절된 일지입니다.');
+
+                if (!logDocSnap.exists()) {
+                    showMessageModal('오류', '성장일지 정보를 찾을 수 없습니다.');
                     return;
                 }
 
                 await updateDoc(logDocRef, { status: 'rejected' });
-
-                const studentDoc = await getDoc(studentDocRef);
-                const studentData = studentDoc.data();
-
-                const newExp = (studentData.exp || 0) + 20;
-
-                await updateDoc(studentDocRef, {
-                    exp: newExp
-                });
-
-                logEvent(studentId, 'growth_log_rejected', {
-                    logId: logId,
-                    exp_gain: 20
-                });
-                
-                showMessageModal('확인', '성장일지가 확인되었습니다. 학생에게 20 경험치가 지급됩니다.');
-
+                showMessageModal('확인 완료', '성장일지가 확인되었습니다. 학생에게 보상이 지급될 예정입니다!');
             } catch (error) {
                 console.error("Growth log rejection failed:", error);
                 showMessageModal('오류', '확인 처리 중 오류가 발생했습니다.');
