@@ -294,17 +294,19 @@
             <div id="teacher-dashboard-view" class="view hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-semibold">교사 대시보드</h2>
-                    <button id="teacher-logout-btn"
-                        class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-500 hover:text-white transition-colors">로그아웃</button>
+                    <div class="flex space-x-2">
+                        <button id="change-teacher-code-btn"
+                            class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-yellow-500 hover:text-white transition-colors text-sm">로그인 코드 변경</button>
+                        <button id="teacher-logout-btn"
+                            class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-500 hover:text-white transition-colors text-sm">로그아웃</button>
+                    </div>
                 </div>
                 <!-- Tabs -->
                 <div class="flex justify-around mb-6 text-sm md:text-base">
                     <button id="teacher-tab-pending-students"
-                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">학생
-                        승인</button>
+                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">학생 승인</button>
                     <button id="teacher-tab-pending-logs"
-                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 border-transparent text-gray-400 hover:text-white">성장일지
-                        승인</button>
+                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 border-transparent text-gray-400 hover:text-white">성장일지 승인</button>
                 </div>
 
                 <!-- Teacher Tab Sections -->
@@ -346,12 +348,33 @@
         </div>
     </div>
 
+    <!-- Custom Modal for changing teacher code -->
+    <div id="teacher-code-modal-overlay"
+        class="hidden fixed inset-0 flex items-center justify-center z-50 modal-overlay transition-opacity duration-300">
+        <div
+            class="bg-gray-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300">
+            <h3 class="text-xl font-semibold mb-4 text-white">로그인 코드 변경</h3>
+            <form id="teacher-code-change-form" class="space-y-4">
+                <div>
+                    <input type="password" id="new-teacher-code-input" placeholder="새로운 교사 코드" required
+                        class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-white">
+                </div>
+                <div class="flex space-x-2">
+                    <button type="submit"
+                        class="flex-1 p-3 rounded-lg text-white font-semibold shadow-md btn-primary">변경</button>
+                    <button type="button" id="cancel-teacher-code-change-btn"
+                        class="flex-1 p-3 rounded-lg text-white font-semibold border-2 border-gray-600 hover:bg-gray-700 transition-colors">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Firebase SDKs -->
     <script type="module">
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, orderBy, limit, serverTimestamp, Timestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Constants from the execution environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
@@ -399,6 +422,12 @@
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        const teacherCodeModalOverlay = document.getElementById('teacher-code-modal-overlay');
+        const teacherCodeChangeForm = document.getElementById('teacher-code-change-form');
+        const newTeacherCodeInput = document.getElementById('new-teacher-code-input');
+        const changeTeacherCodeBtn = document.getElementById('change-teacher-code-btn');
+        const cancelTeacherCodeChangeBtn = document.getElementById('cancel-teacher-code-change-btn');
 
         // Tab buttons (Student)
         const tabInfoBtn = document.getElementById('tab-info');
@@ -484,6 +513,15 @@
 
                 console.log('Firebase initialized. User ID:', userId);
 
+                // Initialize teacher password if it doesn't exist
+                const teacherDocRef = doc(db, `artifacts/${appId}/public/data/teachers`, 'teacher_password');
+                const teacherDocSnap = await getDoc(teacherDocRef);
+                if (!teacherDocSnap.exists()) {
+                    await setDoc(teacherDocRef, {
+                        password: 'superteacher'
+                    });
+                }
+
                 showView('landing');
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
@@ -525,8 +563,8 @@
 
                     if (studentDataCache.exp >= expToNextLevel) {
                         const newLevel = studentDataCache.level + 1;
-                        const newExp = studentData.exp - expToNextLevel;
-                        const newGrowthPoints = studentData.growth_points + 5;
+                        const newExp = studentDataCache.exp - expToNextLevel;
+                        const newGrowthPoints = studentDataCache.growth_points + 5;
 
                         updateDoc(studentDocRef, {
                             level: newLevel,
@@ -604,11 +642,17 @@
                                 <h4 class="text-lg font-semibold">${data.name} (${data.id})</h4>
                                 <p class="text-gray-400 text-sm">학년: ${data.grade}반: ${data.class} 번호: ${data.number}</p>
                             </div>
-                            <button data-id="${docId}" class="approve-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">최고</button>
+                            <div class="flex space-x-2">
+                                <button data-action="approve" data-id="${docId}" class="approve-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">승인</button>
+                                <button data-action="reject" data-id="${docId}" class="reject-btn px-4 py-2 rounded-lg text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors">거절</button>
+                            </div>
                         `;
                         pendingListContainer.appendChild(card);
                     });
                     document.querySelectorAll('.approve-btn').forEach(btn => {
+                        btn.addEventListener('click', handleApproveRequest);
+                    });
+                    document.querySelectorAll('.reject-btn').forEach(btn => {
                         btn.addEventListener('click', handleApproveRequest);
                     });
                 }
@@ -731,7 +775,7 @@
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
 
-            const q = query(logsCollectionRef, 
+            const q = query(logsCollectionRef,
                 where("student_id", "==", userId),
                 where("timestamp", ">=", todayStart)
             );
@@ -774,7 +818,7 @@
         function renderGrowthLog() {
             const logContainer = document.getElementById('growth-log-container');
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-            const q = query(logCollectionRef, 
+            const q = query(logCollectionRef,
                 where("student_id", "==", userId),
                 orderBy('timestamp', 'desc'), limit(50));
 
@@ -916,6 +960,22 @@
             submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 전송 중...`;
 
             try {
+                // Check if a log has already been submitted today
+                const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+                const q = query(logsCollectionRef,
+                    where("student_id", "==", userId),
+                    where("timestamp", ">=", todayStart)
+                );
+                const existingLogs = await getDocs(q);
+
+                if (!existingLogs.empty) {
+                    showMessageModal('제출 실패', '오늘은 이미 성장일지를 제출했습니다.');
+                    return;
+                }
+
+                // Get student data for log entry
                 const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                 const studentDoc = await getDoc(studentDocRef);
                 if (!studentDoc.exists()) {
@@ -924,7 +984,6 @@
                 }
                 const studentData = studentDoc.data();
                 
-                const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
                 await addDoc(logsCollectionRef, {
                     student_id: userId,
                     student_name: studentData.name,
@@ -1064,11 +1123,12 @@
         }
 
         /**
-         * Approves a registration request and moves the data to the students collection.
+         * Approves or rejects a registration request.
          * @param {Event} event - The click event object.
          */
         async function handleApproveRequest(event) {
             const docId = event.target.dataset.id;
+            const action = event.target.dataset.action;
             try {
                 const registerDocRef = doc(db, `artifacts/${appId}/public/data/register`, docId);
                 const registerDocSnap = await getDoc(registerDocRef);
@@ -1079,22 +1139,27 @@
                 }
                 const studentData = registerDocSnap.data();
 
-                const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, docId);
-                await setDoc(studentsDocRef, {
-                    ...studentData,
-                    ...initialStats,
-                    approvedBy: userId,
-                    createdAt: serverTimestamp()
-                });
+                if (action === 'approve') {
+                    const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, docId);
+                    await setDoc(studentsDocRef, {
+                        ...studentData,
+                        ...initialStats,
+                        approvedBy: userId,
+                        createdAt: serverTimestamp()
+                    });
 
-                await updateDoc(registerDocRef, {
-                    status: '승인됨'
-                });
+                    await updateDoc(registerDocRef, {
+                        status: '승인됨'
+                    });
 
-                showMessageModal('승인 완료', `${studentData.name} 학생이 성공적으로 승인되었습니다!`);
+                    showMessageModal('승인 완료', `${studentData.name} 학생이 성공적으로 승인되었습니다!`);
+                } else if (action === 'reject') {
+                    await deleteDoc(registerDocRef);
+                    showMessageModal('거절 완료', `${studentData.name} 학생의 가입이 거절되었습니다.`);
+                }
             } catch (error) {
-                console.error("Approval failed:", error);
-                showMessageModal('승인 오류', '학생 승인 중 오류가 발생했습니다.');
+                console.error("Approval/Rejection failed:", error);
+                showMessageModal('오류', '학생 승인/거절 중 오류가 발생했습니다.');
             }
         }
 
@@ -1130,6 +1195,31 @@
             } catch (error) {
                 console.error("Failed to save stats:", error);
                 showMessageModal('저장 오류', '능력치 저장에 실패했습니다. 다시 시도해주세요.');
+            }
+        }
+
+        /**
+         * Handles teacher code change.
+         */
+        async function handleTeacherCodeChange(e) {
+            e.preventDefault();
+            const newCode = newTeacherCodeInput.value.trim();
+
+            if (!newCode || newCode.length < 4) {
+                showMessageModal('오류', '새로운 교사 코드는 4자 이상이어야 합니다.');
+                return;
+            }
+
+            try {
+                const teacherDocRef = doc(db, `artifacts/${appId}/public/data/teachers`, 'teacher_password');
+                await updateDoc(teacherDocRef, {
+                    password: newCode
+                });
+                teacherCodeModalOverlay.classList.add('hidden');
+                showMessageModal('변경 완료', '교사 로그인 코드가 성공적으로 변경되었습니다!');
+            } catch (error) {
+                console.error("Teacher code change failed:", error);
+                showMessageModal('오류', '교사 코드 변경 중 오류가 발생했습니다.');
             }
         }
 
@@ -1322,6 +1412,15 @@
             auth.signOut();
             showView('landing');
         });
+        
+        // Teacher code change modal buttons
+        changeTeacherCodeBtn.addEventListener('click', () => {
+            teacherCodeModalOverlay.classList.remove('hidden');
+        });
+        cancelTeacherCodeChangeBtn.addEventListener('click', () => {
+            teacherCodeModalOverlay.classList.add('hidden');
+        });
+        teacherCodeChangeForm.addEventListener('submit', handleTeacherCodeChange);
 
         // Student Dashboard Actions
         saveStatsBtn.addEventListener('click', saveStats);
