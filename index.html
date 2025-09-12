@@ -306,8 +306,8 @@
                 <div class="flex justify-around mb-6 text-sm md:text-base">
                     <button id="teacher-tab-pending-students"
                         class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">회원가입 관리</button>
-                    <button id="growth-log-management-tab"
-                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 border-transparent text-gray-400 hover:text-white">성장일지 관리</button>
+                    <button id="teacherTabGrowthLogBtn" 
+                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">성장일지 관리</button>
                 </div>
 
                 <!-- Teacher Tab Sections -->
@@ -1370,15 +1370,30 @@
             teacherTabPendingStudentsBtn.classList.remove('border-transparent', 'text-gray-400');
             teacherTabPendingStudentsBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
-        teacherTabPendingLogsBtn.addEventListener('click', () => {
+        
+        // '성장일지 관리' 탭 전환 로직
+        const teacherTabGrowthLogBtn = document.getElementById('teacherTabGrowthLogBtn');
+        const growthLogManagementTab = document.getElementById('growth-log-management-tab');
+        
+        teacherTabGrowthLogBtn.addEventListener('click', () => {
+            // 모든 탭 숨기기
             document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
-            teacherPendingLogsSection.classList.remove('hidden');
+            
+            // 성장일지 탭 보이기
+            growthLogManagementTab.classList.remove('hidden');
+            
+            // 모든 탭 버튼 비활성화
             document.querySelectorAll('#teacher-dashboard-view .border-b-2').forEach(btn => {
                 btn.classList.remove('border-emerald-400', 'text-emerald-400');
                 btn.classList.add('border-transparent', 'text-gray-400');
             });
-            teacherTabPendingLogsBtn.classList.remove('border-transparent', 'text-gray-400');
-            teacherTabPendingLogsBtn.classList.add('border-emerald-400', 'text-emerald-400');
+            
+            // 현재 탭 버튼 활성화
+            teacherTabGrowthLogBtn.classList.remove('border-transparent', 'text-gray-400');
+            teacherTabGrowthLogBtn.classList.add('border-emerald-400', 'text-emerald-400');
+
+            // 학생 목록 불러오기 함수 호출
+            renderStudentList();
         });
 
         // Forms
@@ -1626,6 +1641,7 @@
 </body>
 
 </html>
+
 
 
 
