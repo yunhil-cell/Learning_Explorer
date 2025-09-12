@@ -397,10 +397,15 @@
         };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Firebase instances
-        let app, db, auth;
+        // 이 변수들은 단 한 번만 선언되어야 합니다.
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const functions = getFunctions(app);
+        
+        // 전역 변수 설정
         let userId = null;
-        let isAuthReady = false;
+        const appId = "Learning_Explorer";
         let studentDataCache = null;
 
         // UI element references
@@ -1640,17 +1645,3 @@
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
