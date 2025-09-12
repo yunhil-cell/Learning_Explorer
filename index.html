@@ -397,12 +397,6 @@
         };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Firebase 앱 초기화
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const functions = getFunctions(app);
-
         // Firebase instances
         let app, db, auth;
         let userId = null;
@@ -1632,6 +1626,7 @@
 </body>
 
 </html>
+
 
 
 
