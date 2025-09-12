@@ -528,10 +528,10 @@
                 const questDocSnap = await getDoc(questDocRef);
                 if (!questDocSnap.exists()) {
                     await setDoc(questDocRef, {
-                        title: "오늘의 일기 쓰기",
-                        description: "오늘 있었던 일을 간단히 기록해 보세요.",
-                        exp_reward: 50,
-                        gp_reward: 1,
+                        title: "오늘의 성장일지 쓰기",
+                        description: "오늘 있었던 나의 성장을 간단히 기록해 보세요.",
+                        exp_reward: 20,
+                        gp_reward: 0,
                         type: "daily"
                     });
                 }
@@ -1509,6 +1509,7 @@
 </body>
 
 </html>
+
 
 
 
