@@ -1376,26 +1376,28 @@
         // Forms
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const studentId = document.getElementById('student-id-input').value;
-            const password = document.getElementById('student-password-input').value;
-
+            const studentIdInput = document.getElementById('student-id-input').value;
+            const studentPasswordInput = document.getElementById('student-password-input').value;
+            showView('loading');
+            
             try {
-                showView('loading');
-                const q = query(collection(db, `artifacts/${appId}/public/data/students`), where("id", "==", studentId), where("password", "==", password));
-                const querySnapshot = await getDocs(q);
+                const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentIdInput);
+                const docSnap = await getDoc(studentDocRef);
 
-                if (querySnapshot.empty) {
+                if (docSnap.exists() && docSnap.data().password === studentPasswordInput) {
+                    // 로그인 성공
+                    // 전역 변수 userId에 학생 ID를 할당합니다.
+                    userId = studentIdInput;
+                    renderStudentDashboard();
+                    logEvent(userId, 'student_login');
+                } else {
+                    // 로그인 실패
                     showMessageModal('로그인 실패', '아이디 또는 비밀번호가 올바르지 않습니다.');
                     showView('studentLogin');
-                    return;
                 }
-
-                const studentDoc = querySnapshot.docs[0];
-                userId = studentDoc.id;
-                renderStudentDashboard();
             } catch (error) {
                 console.error("Student login failed:", error);
-                showMessageModal('로그인 오류', '로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+                showMessageModal('로그인 실패', '오류가 발생했습니다. 다시 시도해주세요.');
                 showView('studentLogin');
             }
         });
@@ -1495,3 +1497,4 @@
 </body>
 
 </html>
+
