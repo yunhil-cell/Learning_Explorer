@@ -319,11 +319,17 @@
                             <p class="text-gray-400 text-center" id="no-pending-students">미승인 학생이 없습니다.</p>
                         </div>
                     </div>
-                    <div id="teacher-pending-logs-section" class="hidden">
-                        <h3 class="text-xl font-semibold mb-4">미승인 성장일지</h3>
-                        <div id="pending-growth-logs-list" class="space-y-4">
-                            <!-- Pending growth logs will be rendered here dynamically -->
-                            <p class="text-gray-400 text-center">미승인 성장일지가 없습니다.</p>
+                    <div id="growth-log-management-tab" class="hidden p-4">
+                        <h3 class="text-xl font-bold mb-4 text-green-300">성장일지 관리</h3>
+                        <div id="student-list-container" class="mb-6">
+                            <h4 class="text-lg font-semibold mb-2">학생 목록</h4>
+                            <div id="student-list" class="flex flex-wrap gap-2">
+                            </div>
+                        </div>
+                        <div id="growth-log-container" class="bg-gray-800 p-4 rounded-lg shadow-inner hidden">
+                            <h4 class="text-lg font-semibold mb-2" id="selected-student-name"></h4>
+                            <div id="growth-log-list">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1505,10 +1511,121 @@
         // Student Dashboard Actions
         saveStatsBtn.addEventListener('click', saveStats);
         document.getElementById('growth-log-form').addEventListener('submit', handleGrowthLogSubmission);
+
+        // '성장일지 관리' 탭 기능
+        const growthLogManagementTab = document.getElementById('growth-log-management-tab');
+        const studentListContainer = document.getElementById('student-list');
+        const growthLogContainer = document.getElementById('growth-log-container');
+        const selectedStudentName = document.getElementById('selected-student-name');
+        const growthLogList = document.getElementById('growth-log-list');
+
+        // Firestore students 컬렉션에서 학생 목록 불러와서 렌더링
+        async function renderStudentList() {
+            try {
+                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+                const q = query(studentsRef, orderBy("number", "asc"));
+                const querySnapshot = await getDocs(q);
+
+                studentListContainer.innerHTML = '';
+                if (querySnapshot.empty) {
+                    studentListContainer.innerHTML = '<p class="text-gray-400">등록된 학생이 없습니다.</p>';
+                } else {
+                    querySnapshot.forEach(doc => {
+                        const studentData = doc.data();
+                        const studentButton = document.createElement('button');
+                        studentButton.textContent = `${studentData.name} (${studentData.id})`;
+                        studentButton.classList.add('bg-gray-600', 'hover:bg-gray-500', 'text-white', 'py-2', 'px-4', 'rounded-full', 'transition-colors');
+                        studentButton.setAttribute('data-student-id', studentData.id);
+                        studentListContainer.appendChild(studentButton);
+                    });
+                }
+            } catch (error) {
+                console.error("학생 목록 불러오기 실패:", error);
+                showMessageModal('오류', '학생 목록을 불러오는 데 실패했습니다.');
+            }
+        }
+
+        // 특정 학생의 성장일지 목록 불러와서 렌더링 (평가 기능 포함)
+        async function renderGrowthLogsWithEvaluation(studentId, studentName) {
+            try {
+                const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+                const q = query(growthLogsRef, where("studentId", "==", studentId), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                selectedStudentName.textContent = `${studentName} 학생의 성장일지`;
+                growthLogList.innerHTML = '';
+                growthLogContainer.classList.remove('hidden');
+
+                if (querySnapshot.empty) {
+                    growthLogList.innerHTML = '<p class="text-gray-400">제출된 성장일지가 없습니다.</p>';
+                } else {
+                    querySnapshot.forEach(doc => {
+                        const logData = doc.data();
+                        const logDate = logData.createdAt ? logData.createdAt.toDate().toLocaleDateString('ko-KR') : '날짜 없음';
+                        const logElement = document.createElement('div');
+                        logElement.classList.add('bg-gray-900', 'p-4', 'rounded-lg', 'shadow-inner', 'mb-2', 'relative');
+                        logElement.innerHTML = `
+                            <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
+                            <p class="text-white mb-2">${logData.content}</p>
+                            <div class="mt-2">
+                                <span class="text-sm text-gray-500 mr-2">평가 상태: </span>
+                                <span class="text-sm font-bold">${logData.evaluation ? logData.evaluation : '미평가'}</span>
+                            </div>
+                            <div class="mt-4 flex gap-2">
+                                <button class="btn-primary text-sm px-3 py-1 rounded-full approve-btn" data-log-id="${doc.id}">최고</button>
+                                <button class="btn-secondary text-sm px-3 py-1 rounded-full check-btn" data-log-id="${doc.id}">확인</button>
+                            </div>
+                        `;
+                        growthLogList.appendChild(logElement);
+                    });
+                }
+            } catch (error) {
+                console.error("성장일지 불러오기 실패:", error);
+                showMessageModal('오류', '성장일지를 불러오는 데 실패했습니다.');
+            }
+        }
+
+        // 학생 목록 버튼 클릭 이벤트 리스너
+        studentListContainer.addEventListener('click', async (e) => {
+            const studentButton = e.target.closest('button');
+            if (studentButton) {
+                const studentId = studentButton.getAttribute('data-student-id');
+                const studentName = studentButton.textContent.split('(')[0].trim();
+                await renderGrowthLogsWithEvaluation(studentId, studentName);
+            }
+        });
+
+        // 평가 버튼 클릭 이벤트 리스너
+        growthLogList.addEventListener('click', async (e) => {
+            const approveBtn = e.target.closest('.approve-btn');
+            const checkBtn = e.target.closest('.check-btn');
+            
+            if (approveBtn || checkBtn) {
+                const logId = (approveBtn || checkBtn).getAttribute('data-log-id');
+                const evaluation = approveBtn ? '최고' : '확인';
+                
+                try {
+                    const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
+                    await updateDoc(logRef, {
+                        evaluation: evaluation
+                    });
+                    showMessageModal('평가 완료', `성장일지가 '${evaluation}'으로 평가되었습니다.`);
+                } catch (error) {
+                    console.error("평가 업데이트 실패:", error);
+                    showMessageModal('오류', '성장일지 평가 중 오류가 발생했습니다.');
+                }
+            }
+        });
+
+        // 성장일지 관리 탭 진입 시 학생 목록 렌더링
+        // (탭 전환 로직에 이 함수를 호출하는 코드를 추가해야 함)
+        // 예: showView('teacherDashboard', 'growth-log-management-tab');
+        document.addEventListener('DOMContentLoaded', renderStudentList);
     </script>
 </body>
 
 </html>
+
 
 
 
