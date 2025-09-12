@@ -381,7 +381,7 @@
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-functions.js";
         
         // Constants from the execution environment
@@ -402,6 +402,7 @@
         let db = getFirestore(app);
         let auth = getAuth(app);
         let functions = getFunctions(app);
+        let isAuthReady = false;
         
         // 전역 변수 설정
         let userId = null;
@@ -518,7 +519,7 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                await signInWithCustomToken(auth, initialAuthToken || 'anonymous-token').catch(() => signInAnonymously(auth));
+                await signInAnonymously(auth));
 
                 userId = auth.currentUser.uid;
                 isAuthReady = true;
@@ -1644,6 +1645,7 @@
 </body>
 
 </html>
+
 
 
 
