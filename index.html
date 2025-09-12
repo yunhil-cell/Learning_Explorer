@@ -1419,7 +1419,7 @@
             const studentClass = parseInt(document.getElementById('register-class').value);
             const number = parseInt(document.getElementById('register-number').value);
             const charName = document.getElementById('register-char-name').value;
-
+            
             if (password.length < 4) {
                 showMessageModal('회원가입 오류', '비밀번호는 4자 이상이어야 합니다.');
                 return;
@@ -1431,19 +1431,22 @@
                 const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
                 const qRegister = query(registerRef, where("id", "==", id));
                 const qStudents = query(studentsRef, where("id", "==", id));
-
+                
                 const registerSnapshot = await getDocs(qRegister);
                 const studentsSnapshot = await getDocs(qStudents);
-
+                
                 if (!registerSnapshot.empty || !studentsSnapshot.empty) {
                     showMessageModal('회원가입 오류', '이미 존재하는 아이디입니다. 다른 아이디를 사용해주세요.');
                     showView('register');
                     return;
                 }
 
+                // 비밀번호를 해시하여 저장
+                const hashedPassword = sha256(password);
+                
                 await setDoc(doc(db, `artifacts/${appId}/public/data/register`, id), {
                     id: id,
-                    password: password,
+                    password: hashedPassword,
                     name: name,
                     grade: grade,
                     class: studentClass,
@@ -1453,7 +1456,7 @@
                     quests: {},
                     createdAt: serverTimestamp()
                 });
-
+                
                 showMessageModal('가입 신청 완료', '가입 신청이 완료되었습니다. 교사의 승인을 기다려 주세요!');
                 showView('landing');
             } catch (error) {
@@ -1505,6 +1508,7 @@
 </body>
 
 </html>
+
 
 
 
