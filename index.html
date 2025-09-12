@@ -398,10 +398,10 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // 이 변수들은 단 한 번만 선언되어야 합니다.
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const functions = getFunctions(app);
+        let app = initializeApp(firebaseConfig);
+        let db = getFirestore(app);
+        let auth = getAuth(app);
+        let functions = getFunctions(app);
         
         // 전역 변수 설정
         let userId = null;
@@ -1644,5 +1644,6 @@
 </body>
 
 </html>
+
 
 
