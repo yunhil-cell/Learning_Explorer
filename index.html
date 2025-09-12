@@ -305,9 +305,9 @@
                 <!-- Tabs -->
                 <div class="flex justify-around mb-6 text-sm md:text-base">
                     <button id="teacher-tab-pending-students"
-                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">학생 승인</button>
-                    <button id="teacher-tab-pending-logs"
-                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 border-transparent text-gray-400 hover:text-white">성장일지 승인</button>
+                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">회원가입 관리</button>
+                    <button id="growth-log-management-tab"
+                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 border-transparent text-gray-400 hover:text-white">성장일지 관리</button>
                 </div>
 
                 <!-- Teacher Tab Sections -->
@@ -380,8 +380,9 @@
     <script type="module">
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-functions.js";
         
         // Constants from the execution environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
@@ -395,6 +396,12 @@
             measurementId: "G-BNMVYB2XNJ"
         };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase 앱 초기화
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const functions = getFunctions(app);
 
         // Firebase instances
         let app, db, auth;
@@ -1625,6 +1632,7 @@
 </body>
 
 </html>
+
 
 
 
