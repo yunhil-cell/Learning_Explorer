@@ -1385,21 +1385,19 @@
         const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentIdInput);
         const docSnap = await getDoc(studentDocRef);
 
-        // 사용자가 입력한 비밀번호를 SHA-256으로 해시합니다.
         const hashedPassword = sha256(studentPasswordInput);
 
         if (docSnap.exists() && docSnap.data().password === hashedPassword) {
-            // Firestore에서 사용자 정보가 확인되면, 익명 인증으로 로그인합니다.
+            // Firestore에서 사용자 정보가 확인되면, 익명 인증으로 로그인
             const userCredential = await signInAnonymously(auth);
             const user = userCredential.user;
 
-            // Firestore에 사용자의 익명 ID와 학생 ID를 연결합니다.
+            // Firestore에 사용자의 익명 ID와 학생 ID를 연결
             await setDoc(doc(db, `artifacts/${appId}/public/data/users`, user.uid), {
                 studentId: studentIdInput,
                 role: 'student'
             });
 
-            // 전역 변수 userId에 학생 ID를 할당합니다.
             userId = studentIdInput;
             renderStudentDashboard();
             logEvent(userId, 'student_login');
@@ -1509,6 +1507,7 @@
 </body>
 
 </html>
+
 
 
 
