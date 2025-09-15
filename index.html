@@ -1531,17 +1531,16 @@
         const growthLogList = document.getElementById('growth-log-list');
         
         // 미확인 성장일지 불러오기 및 렌더링
-        async function renderUnverifiedLogs() {
+async function renderUnverifiedLogs() {
             try {
                 unverifiedLogList.innerHTML = '<p class="text-gray-400">불러오는 중...</p>';
                 const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
                 
-                const q = query(logsRef, where("rewarded", "==", false), orderBy("createdAt", "desc"));
+                // 쿼리 수정: rewarded 대신 status 필드를 사용합니다.
+                const q = query(logsRef, where("status", "==", "pending"), orderBy("createdAt", "desc"));
                 
-                // --- 수정된 부분 ---
-                const querySnapshot = await getDocs(q, { source: 'server' });
-                // ------------------
-
+                const querySnapshot = await getDocs(q);
+        
                 unverifiedLogList.innerHTML = '';
                 if (querySnapshot.empty) {
                     unverifiedLogList.innerHTML = '<p class="text-gray-400">미확인된 성장일지가 없습니다.</p>';
@@ -1711,6 +1710,7 @@
 </body>
 
 </html>
+
 
 
 
