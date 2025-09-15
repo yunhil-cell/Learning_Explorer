@@ -1538,7 +1538,7 @@
         async function renderGrowthLogsWithEvaluation(studentId, studentName) {
             try {
                 const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-                const q = query(growthLogsRef, where("studentId", "==", studentId), orderBy("createdAt", "desc"));
+                const q = query(growthLogsRef, where("student_id", "==", studentId), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(q);
 
                 selectedStudentName.textContent = `${studentName} 학생의 성장일지`;
@@ -1614,6 +1614,7 @@
 </body>
 
 </html>
+
 
 
 
