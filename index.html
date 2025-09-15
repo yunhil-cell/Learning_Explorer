@@ -1535,7 +1535,9 @@
             try {
                 unverifiedLogList.innerHTML = '<p class="text-gray-400">불러오는 중...</p>';
                 const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-                const q = query(logsRef, where("evaluation", "==", false), orderBy("createdAt", "desc"));
+                // 수정된 쿼리: 'rewarded' 필드가 false인 성장일지를 불러옵니다.
+                const q = query(logsRef, where("rewarded", "==", false), orderBy("createdAt", "desc"));
+                
                 const querySnapshot = await getDocs(q);
         
                 unverifiedLogList.innerHTML = '';
@@ -1707,4 +1709,5 @@
 </body>
 
 </html>
+
 
