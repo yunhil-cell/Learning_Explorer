@@ -395,7 +395,7 @@
     <script type="module">
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot, serverTimestamp, setLogLevel, limit } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot, serverTimestamp, setLogLevel, limit, increment } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
         import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-functions.js";
         
@@ -1128,7 +1128,7 @@
                 }
                 
                 await addDoc(logsCollectionRef, {
-                    student_id: studentData.id,
+                    student_id: userId,
                     student_name: studentData.name,
                     content: logText,
                     status: 'pending',
@@ -1242,7 +1242,7 @@
                 const studentData = registerDocSnap.data();
                 
                 if (action === 'approve') {
-                    const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, docId);
+                    const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                     await setDoc(studentsDocRef, {
                         ...studentData,
                         ...initialStats,
@@ -1787,6 +1787,7 @@
 </body>
 
 </html>
+
 
 
 
