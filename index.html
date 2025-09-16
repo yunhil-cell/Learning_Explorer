@@ -303,11 +303,13 @@
                     </div>
                 </div>
                 <!-- Tabs -->
-                <div class="flex justify-around mb-6 text-sm md:text-base">
+                <div class="flex justify-start gap-2 mb-6 text-sm md:text-base">
                     <button id="teacher-tab-pending-students"
-                        class="flex-1 px-2 md:px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">회원가입 관리</button>
+                        class="px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">회원가입 관리</button>
                     <button id="teacherTabGrowthLogBtn" 
                         class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">성장일지 관리</button>
+                    <button id="teacher-tab-students"
+                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">학생 정보 확인</button>
                 </div>
 
                 <!-- Teacher Tab Sections -->
@@ -320,8 +322,7 @@
                         </div>
                     </div>
                     <div id="growth-log-management-tab" class="hidden p-4">
-                        <h3 class="text-xl font-bold mb-4 text-green-300">성장일지 관리</h3>
-                        
+                        <h3 class="text-xl font-bold mb-4 text-green-300">성장일지 관리</h3>                        
                         <div class="flex mb-4 border-b border-gray-700">
                             <button id="unverified-logs-tab-btn" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
                                 미확인 성장일지
@@ -345,6 +346,26 @@
                                 <div id="growth-log-list"></div>
                             </div>                            
                         </div>
+                    <div id="teacher-students-section" class="hidden">
+                        <h3 class="text-xl font-semibold mb-4">학생 정보 확인</h3>
+                        <div id="students-overview-list" class="space-y-2"></div>
+                    </div>
+                    <div id="student-detail-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
+                        <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-md">
+                            <h3 id="student-detail-name" class="text-xl font-bold text-white mb-4"></h3>
+                            <div class="space-y-2 text-gray-200">
+                                <div class="flex justify-between"><span>레벨</span><span id="detail-level"></span></div>
+                                <div class="flex justify-between"><span>경험치</span><span id="detail-exp"></span></div>
+                                <div class="flex justify-between"><span>다이아</span><span id="detail-diamonds"></span></div>
+                            </div>
+                            <div class="mt-4">
+                                <h4 class="text-lg font-semibold mb-2 text-white">능력치</h4>
+                                <div id="student-detail-stats" class="space-y-2"></div>
+                            </div>
+                            <button id="close-student-detail"
+                                class="mt-6 w-full px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">닫기</button>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -1793,22 +1814,114 @@
         if (studentList) {
             studentList.addEventListener('click', handleStudentListClick);
         }
+
+        // 새 탭 요소
+        const teacherTabStudentsBtn = document.getElementById('teacher-tab-students');
+        const teacherStudentsSection = document.getElementById('teacher-students-section');
+        const studentsOverviewList = document.getElementById('students-overview-list');
+        
+        // 학생 정보 확인 탭 클릭 시
+        teacherTabStudentsBtn.addEventListener('click', async () => {
+            // 모든 섹션 숨기기
+            document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
+            // 현재 섹션만 표시
+            teacherStudentsSection.classList.remove('hidden');
+            
+            // 탭 버튼 스타일 초기화
+            document.querySelectorAll('#teacher-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            // 현재 탭 활성화
+            teacherTabStudentsBtn.classList.remove('border-transparent', 'text-gray-400');
+            teacherTabStudentsBtn.classList.add('border-emerald-400', 'text-emerald-400');
+            
+            // 목록 렌더링
+            await renderStudentsOverview();
+        });
+        
+        // 학생 목록 렌더링 (학생 정보 확인 탭 전용)
+        async function renderStudentsOverview() {
+            try {
+                studentsOverviewList.innerHTML = '<p class="text-gray-400">불러오는 중...</p>';
+                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+                const q = query(studentsRef, orderBy("number", "asc"));
+                const snapshot = await getDocs(q);
+                
+                studentsOverviewList.innerHTML = '';
+                if (snapshot.empty) {
+                    studentsOverviewList.innerHTML = '<p class="text-gray-400">등록된 학생이 없습니다.</p>';
+                    return;
+                }
+                
+                snapshot.forEach(docSnap => {
+                    const s = docSnap.data();
+                    const row = document.createElement('div');
+                    row.className = 'bg-gray-800 p-3 rounded flex items-center justify-between';
+                    row.innerHTML = `
+                    <div>
+                    <p class="text-white font-semibold">${s.name} <span class="text-gray-400 text-sm">(${s.id || docSnap.id})</span></p>
+                    <p class="text-gray-400 text-sm">학년 ${s.grade ?? '-'} · 반 ${s.class ?? '-'} · 번호 ${s.number ?? '-'}</p>
+                    </div>
+                    <button class="px-3 py-1 rounded bg-emerald-500 text-white text-sm hover:bg-emerald-600"
+                    data-student-id="${docSnap.id}">상세 보기</button>
+                    `;
+                    studentsOverviewList.appendChild(row);
+                });
+            } catch (err) {
+                console.error('학생 목록 불러오기 실패:', err);
+                showMessageModal('오류', '학생 목록을 불러오는 데 실패했습니다.');
+            }
+        }
+        
+        // 상세 보기 모달 로직
+        const studentDetailModal = document.getElementById('student-detail-modal');
+        const closeStudentDetailBtn = document.getElementById('close-student-detail');
+        
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button[data-student-id]');
+            if (!btn) return;
+            const sid = btn.getAttribute('data-student-id');
+            await openStudentDetail(sid);
+        });
+        
+        closeStudentDetailBtn.addEventListener('click', () => {
+            studentDetailModal.classList.add('hidden');
+        });
+        
+        async function openStudentDetail(studentId) {
+            try {
+                const studentRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+                const snap = await getDoc(studentRef);
+                if (!snap.exists()) {
+                    showMessageModal('오류', '학생 정보를 찾을 수 없습니다.');
+                    return;
+                }
+                const d = snap.data();
+                
+                // 상단 기본 정보
+                document.getElementById('student-detail-name').textContent = `${d.name} (${d.id || studentId})`;
+                document.getElementById('detail-level').textContent = d.level ?? 0;
+                document.getElementById('detail-exp').textContent = d.exp ?? 0;
+                document.getElementById('detail-diamonds').textContent = d.diamonds ?? 0;
+                
+                // 능력치
+                const statsWrap = document.getElementById('student-detail-stats');
+                statsWrap.innerHTML = '';
+                ['stamina','attack','defense','luck'].forEach(k => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between text-gray-200';
+                    div.innerHTML = `<span>${statLabels[k]}</span><span>${d[k] ?? 0}</span>`;
+                    statsWrap.appendChild(div);
+                });
+                
+                studentDetailModal.classList.remove('hidden');
+            } catch (err) {
+                console.error('학생 상세 보기 실패:', err);
+                showMessageModal('오류', '학생 상세 정보를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
     </script>
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
