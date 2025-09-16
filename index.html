@@ -1015,7 +1015,7 @@
                 const logCollectionRef = collection(db, `artifacts/${appId}/public/data/students/${studentId}/log`);
                 await addDoc(logCollectionRef, {
                     event_type: eventType,
-                    details: details,
+                    details: details || {},   // ✅ undefined면 빈 객체로 저장
                     timestamp: serverTimestamp()
                 });
             } catch (error) {
@@ -1787,6 +1787,7 @@
 </body>
 
 </html>
+
 
 
 
