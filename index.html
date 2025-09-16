@@ -729,7 +729,7 @@
                             let growthPointGain = 0;
 
                             if (logData.status === 'approved') {
-                                expGain = 50;
+                                expGain = 30;
                                 growthPointGain = 1;
                                 showMessageModal('축하합니다!', `교사에게 성장일지 '최고' 점수를 받았습니다! 경험치 ${expGain}을 얻었습니다.`);
                             } else if (logData.status === 'rejected') {
@@ -1234,13 +1234,13 @@
             try {
                 const registerDocRef = doc(db, `artifacts/${appId}/public/data/register`, docId);
                 const registerDocSnap = await getDoc(registerDocRef);
-
+                
                 if (!registerDocSnap.exists()) {
                     showMessageModal('오류', '신청 정보를 찾을 수 없습니다.');
                     return;
                 }
                 const studentData = registerDocSnap.data();
-
+                
                 if (action === 'approve') {
                     const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, docId);
                     await setDoc(studentsDocRef, {
@@ -1249,11 +1249,10 @@
                         approvedBy: userId,
                         createdAt: serverTimestamp()
                     });
-
-                    await updateDoc(registerDocRef, {
-                        status: '승인됨'
-                    });
-
+                    
+                    // ✅ register 문서 삭제 (status 업데이트 대신)
+                    await deleteDoc(registerDocRef);
+                    
                     showMessageModal('승인 완료', `${studentData.name} 학생이 성공적으로 승인되었습니다!`);
                 } else if (action === 'reject') {
                     await deleteDoc(registerDocRef);
@@ -1730,14 +1729,33 @@
                 
                 try {
                     const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
-                    // status와 evaluation 필드를 함께 업데이트합니다.
                     await updateDoc(logRef, {
                         status: newStatus,
                         evaluation: evaluationText
                     });
+                    
+                    // ✅ 보상 지급 로직 추가
+                    const logSnap = await getDoc(logRef);
+                    const studentId = logSnap.data().student_id;
+                    const studentRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+                    
+                    if (isApproved) {
+                        // 최고 → 경험치 +30, 다이아 +10
+                        await updateDoc(studentRef, {
+                            exp: increment(30),
+                            dia: increment(10)
+                        });
+                    } else {
+                        // 확인 → 경험치 +20, 다이아 +10
+                        await updateDoc(studentRef, {
+                            exp: increment(20),
+                            dia: increment(10)
+                        });
+                    }
+                    
                     showMessageModal('평가 완료', `성장일지가 '${evaluationText}'(으)로 평가되었습니다.`);
                     
-                    // 평가 후 미확인 탭과 전체 탭을 다시 렌더링
+                    // 평가 후 목록 새로고침
                     renderUnverifiedLogs();
                     if (!allLogsSection.classList.contains('hidden')) {
                         const studentId = e.target.closest('[data-student-id]')?.getAttribute('data-student-id');
@@ -1769,6 +1787,7 @@
 </body>
 
 </html>
+
 
 
 
