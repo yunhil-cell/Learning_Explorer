@@ -1602,11 +1602,6 @@
             }
         }
         
-        const studentList = document.getElementById('student-list');
-        if (studentList) {
-            studentList.addEventListener('click', handleStudentListClick);
-        }
-        
         // 특정 학생의 성장일지 목록 불러오기 (평가 버튼 조건부 표시)
         async function renderGrowthLogsWithEvaluation(studentId, studentName) {
             try {
@@ -1725,10 +1720,16 @@
         // (탭 전환 로직에 이 함수를 호출하는 코드를 추가해야 함)
         // 예: showView('teacherDashboard', 'growth-log-management-tab');
         document.addEventListener('DOMContentLoaded', renderStudentList);
+
+        const studentList = document.getElementById('student-list');
+        if (studentList) {
+            studentList.addEventListener('click', handleStudentListClick);
+        }
     </script>
 </body>
 
 </html>
+
 
 
 
