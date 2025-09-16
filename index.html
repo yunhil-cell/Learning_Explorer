@@ -320,8 +320,7 @@
                             <!-- Pending student list will be rendered here dynamically -->
                             <p class="text-gray-400 text-center" id="no-pending-students">미승인 학생이 없습니다.</p>
                         </div>
-                    </div>
-                    
+                    </div>                    
                     <div id="growth-log-management-tab" class="hidden p-4">
                         <h3 class="text-xl font-bold mb-4 text-green-300">성장일지 관리</h3>                        
                         <div class="flex mb-4 border-b border-gray-700">
@@ -357,17 +356,64 @@
                     <div id="student-detail-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
                         <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-md">
                             <h3 id="student-detail-name" class="text-xl font-bold text-white mb-4"></h3>
+                            
+                            <!-- 기본 정보 -->
                             <div class="space-y-2 text-gray-200">
                                 <div class="flex justify-between"><span>레벨</span><span id="detail-level"></span></div>
                                 <div class="flex justify-between"><span>경험치</span><span id="detail-exp"></span></div>
                                 <div class="flex justify-between"><span>다이아</span><span id="detail-diamonds"></span></div>
                             </div>
+                            
+                            <!-- 능력치 -->
                             <div class="mt-4">
                                 <h4 class="text-lg font-semibold mb-2 text-white">능력치</h4>
                                 <div id="student-detail-stats" class="space-y-2"></div>
                             </div>
-                            <button id="close-student-detail"
-                                class="mt-6 w-full px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">닫기</button>
+                            
+                            <!-- 액션 버튼 -->
+                            <div class="mt-6 flex flex-col gap-2">
+                                <button id="give-exp-btn" class="w-full px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">경험치 지급</button>
+                                <div id="exp-give-section" class="hidden p-3 bg-gray-700 rounded">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <button id="exp-minus" class="px-2 py-1 bg-gray-600 rounded">-</button>
+                                        <input id="exp-amount" type="number" value="10" min="1" class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
+                                        <button id="exp-plus" class="px-2 py-1 bg-gray-600 rounded">+</button>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button id="exp-confirm" class="flex-1 bg-blue-500 text-white px-3 py-1 rounded">지급</button>
+                                        <button id="exp-cancel" class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
+                                    </div>
+                                </div>
+                                
+                                <button id="give-dia-btn" class="w-full px-4 py-2 rounded bg-purple-500 text-white font-semibold hover:bg-purple-600">다이아 지급</button>
+                                <div id="dia-give-section" class="hidden p-3 bg-gray-700 rounded">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <button id="dia-minus" class="px-2 py-1 bg-gray-600 rounded">-</button>
+                                        <input id="dia-amount" type="number" value="5" min="1" class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
+                                        <button id="dia-plus" class="px-2 py-1 bg-gray-600 rounded">+</button>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button id="dia-confirm" class="flex-1 bg-purple-500 text-white px-3 py-1 rounded">지급</button>
+                                        <button id="dia-cancel" class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
+                                    </div>
+                                </div>
+                                
+                                <button id="give-growth-btn" class="w-full px-4 py-2 rounded bg-green-500 text-white font-semibold hover:bg-green-600">성장 포인트 지급</button>
+                                <div id="growth-give-section" class="hidden p-3 bg-gray-700 rounded">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <button id="growth-minus" class="px-2 py-1 bg-gray-600 rounded">-</button>
+                                        <input id="growth-amount" type="number" value="3" min="1" class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
+                                        <button id="growth-plus" class="px-2 py-1 bg-gray-600 rounded">+</button>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button id="growth-confirm" class="flex-1 bg-green-500 text-white px-3 py-1 rounded">지급</button>
+                                        <button id="growth-cancel" class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 닫기 -->
+                            <button id="close-student-detail" class="mt-6 w-full px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">닫기</button>
                         </div>
                     </div>
                 </div>
@@ -1892,6 +1938,10 @@
             studentDetailModal.classList.add('hidden');
         });
         
+        // 현재 선택된 학생 ID 저장용
+        let currentStudentId = null;
+        
+        // 상세 보기 모달 열기
         async function openStudentDetail(studentId) {
             try {
                 const studentRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
@@ -1901,6 +1951,9 @@
                     return;
                 }
                 const d = snap.data();
+                
+                // 현재 학생 ID 저장
+                currentStudentId = studentId;
                 
                 // 상단 기본 정보
                 document.getElementById('student-detail-name').textContent = `${d.name} (${d.id || studentId})`;
@@ -1924,9 +1977,66 @@
                 showMessageModal('오류', '학생 상세 정보를 불러오는 중 오류가 발생했습니다.');
             }
         }
+        
+        // 공통 지급 로직 세팅 함수
+        function setupIncrement(section, field, firestoreKey) {
+            const minusBtn = document.getElementById(`${section}-minus`);
+            const plusBtn = document.getElementById(`${section}-plus`);
+            const input = document.getElementById(`${section}-amount`);
+            const confirmBtn = document.getElementById(`${section}-confirm`);
+            const cancelBtn = document.getElementById(`${section}-cancel`);
+            const sectionDiv = document.getElementById(`${section}-give-section`);
+            const openBtn = document.getElementById(`give-${section}-btn`);
+            
+            // 열기
+            openBtn.addEventListener("click", () => {
+                sectionDiv.classList.remove("hidden");
+            });
+            
+            // 증감
+            minusBtn.addEventListener("click", () => {
+                input.value = Math.max(1, parseInt(input.value) - 1);
+            });
+            plusBtn.addEventListener("click", () => {
+                input.value = parseInt(input.value) + 1;
+            });
+            
+            // 지급
+            confirmBtn.addEventListener("click", async () => {
+                const amount = parseInt(input.value);
+                if (!currentStudentId || isNaN(amount)) return;
+                const studentRef = doc(db, `artifacts/${appId}/public/data/students`, currentStudentId);
+                await updateDoc(studentRef, { [firestoreKey]: increment(amount) });
+                showMessageModal("완료", `${field} ${amount} 지급 완료!`);
+                
+                // 지급 후 화면 값도 즉시 갱신
+                if (firestoreKey === "exp") {
+                    document.getElementById("detail-exp").textContent =
+                        parseInt(document.getElementById("detail-exp").textContent) + amount;
+                } else if (firestoreKey === "diamonds") {
+                    document.getElementById("detail-diamonds").textContent =
+                        parseInt(document.getElementById("detail-diamonds").textContent) + amount;
+                } else if (firestoreKey === "growth_points") {
+                    // 성장 포인트는 모달에 직접 표시하는 span이 없으면 생략 가능
+                }
+                
+                sectionDiv.classList.add("hidden");
+            });
+            
+            // 취소
+            cancelBtn.addEventListener("click", () => {
+                sectionDiv.classList.add("hidden");
+            });
+        }
+        
+        // 세트 초기화 (모달 로딩 후 실행)
+        setupIncrement("exp", "경험치", "exp");
+        setupIncrement("dia", "다이아", "diamonds");
+        setupIncrement("growth", "성장 포인트", "growth_points");
     </script>
 </body>
 
 </html>
+
 
 
