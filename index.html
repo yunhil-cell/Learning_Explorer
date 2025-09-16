@@ -666,31 +666,31 @@
                 const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
                 const q = query(
                     growthLogsRef,
-                    where("student_id", "==", userId),
+                    where("student_id", "==", userId),   // 로그인한 학생 ID
                     orderBy("timestamp", "desc")
                 );
                 const querySnapshot = await getDocs(q);
                 
-                const myGrowthLogList = document.getElementById("my-growth-log-list");
-                myGrowthLogList.innerHTML = "";
-                
+                const container = document.getElementById("growth-log-container");
+                container.innerHTML = ""; // 기존 안내 문구 제거
+
                 if (querySnapshot.empty) {
-                    myGrowthLogList.innerHTML = '<p class="text-gray-400">아직 작성한 성장일지가 없습니다.</p>';
+                    container.innerHTML = '<p class="text-gray-400">아직 작성한 성장일지가 없습니다.</p>';
                 } else {
                     querySnapshot.forEach(doc => {
                         const logData = doc.data();
                         const logDate = logData.timestamp?.toDate().toLocaleString("ko-KR") || "날짜 없음";
                         
                         const logElement = document.createElement("div");
-                        logElement.classList.add("bg-gray-800", "p-4", "rounded-lg", "mb-2");
+                        logElement.classList.add("bg-gray-700", "p-4", "rounded-lg");
                         
-                logElement.innerHTML = `
-                <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
-                <p class="text-white mb-2">${logData.content}</p>
-                <p class="text-sm text-gray-500">평가: ${logData.evaluation || "아직 없음"}</p>
-                `;
+                        logElement.innerHTML = `
+                        <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
+                        <p class="text-white mb-2">${logData.content}</p>
+                        <p class="text-sm text-gray-500">평가: ${logData.evaluation || "아직 없음"}</p>
+                        `;
                         
-                        myGrowthLogList.appendChild(logElement);
+                        container.appendChild(logElement);
                     });
                 }
             } catch (error) {
@@ -1765,48 +1765,11 @@
         if (studentList) {
             studentList.addEventListener('click', handleStudentListClick);
         }
-
-        async function renderMyGrowthLogs() {
-            try {
-                const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-                const q = query(
-                    growthLogsRef,
-                    where("student_id", "==", userId),   // 로그인한 학생 ID
-                    orderBy("timestamp", "desc")
-                );
-                const querySnapshot = await getDocs(q);
-                
-                const container = document.getElementById("growth-log-container");
-                container.innerHTML = ""; // 기존 안내 문구 제거
-
-                if (querySnapshot.empty) {
-                    container.innerHTML = '<p class="text-gray-400">아직 작성한 성장일지가 없습니다.</p>';
-                } else {
-                    querySnapshot.forEach(doc => {
-                        const logData = doc.data();
-                        const logDate = logData.timestamp?.toDate().toLocaleString("ko-KR") || "날짜 없음";
-                        
-                        const logElement = document.createElement("div");
-                        logElement.classList.add("bg-gray-700", "p-4", "rounded-lg");
-                        
-                        logElement.innerHTML = `
-                        <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
-                        <p class="text-white mb-2">${logData.content}</p>
-                        <p class="text-sm text-gray-500">평가: ${logData.evaluation || "아직 없음"}</p>
-                        `;
-                        
-                        container.appendChild(logElement);
-                    });
-                }
-            } catch (error) {
-                console.error("내 성장일지 불러오기 실패:", error);
-                showMessageModal("오류", "성장일지를 불러오는 데 실패했습니다.");
-            }
-        }
     </script>
 </body>
 
 </html>
+
 
 
 
