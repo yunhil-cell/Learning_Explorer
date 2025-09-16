@@ -889,8 +889,8 @@
                             statusColor = 'bg-emerald-900 text-emerald-300';
                             break;
                         case 'rejected':
-                            statusText = `<i class="fa-solid fa-times-circle text-red-400 mr-2"></i>오늘의 성장일지가 확인되었습니다. 다시 작성해 보세요.`;
-                            statusColor = 'bg-red-900 text-red-300';
+                            statusText = `<i class="fa-solid fa-check text-gray-400 mr-2"></i>오늘의 성장일지가 확인되었습니다.`;
+                            statusColor = 'bg-gray-700 text-gray-300';
                             break;
                     }
                     statusContainer.innerHTML = statusText;
@@ -1675,14 +1675,19 @@
             
             if (approveBtn || checkBtn) {
                 const logId = (approveBtn || checkBtn).getAttribute('data-log-id');
-                const evaluation = approveBtn ? '최고' : '확인';
+                const isApproved = !!approveBtn; // '최고' 버튼이면 true
+                const newStatus = isApproved ? 'approved' : 'rejected';
+                const evaluationText = isApproved ? '최고' : '확인';
                 
                 try {
                     const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
+                    // status와 evaluation 필드를 함께 업데이트합니다.
                     await updateDoc(logRef, {
-                        evaluation: evaluation
+                        status: newStatus,
+                        evaluation: evaluationText
                     });
-                    showMessageModal('평가 완료', `성장일지가 '${evaluation}'으로 평가되었습니다.`);
+                    showMessageModal('평가 완료', `성장일지가 '${evaluationText}'(으)로 평가되었습니다.`);
+                    
                     // 평가 후 미확인 탭과 전체 탭을 다시 렌더링
                     renderUnverifiedLogs();
                     if (!allLogsSection.classList.contains('hidden')) {
@@ -1710,3 +1715,4 @@
 </body>
 
 </html>
+
