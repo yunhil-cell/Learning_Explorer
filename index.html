@@ -395,7 +395,7 @@
     <script type="module">
         // Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot, serverTimestamp, setLogLevel, limit } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
         import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-functions.js";
         
@@ -1769,6 +1769,7 @@
 </body>
 
 </html>
+
 
 
 
