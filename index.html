@@ -423,6 +423,14 @@
         let userId = null;
         let studentDataCache = null;
 
+        // ✅ 능력치 라벨 매핑
+        const statLabels = {
+            stamina: "건강", 
+            attack: "공격력", 
+            defense: "방어력", 
+            luck: "행운"
+        };
+
         // UI element references
         const views = {
             landing: document.getElementById('landing-view'),
@@ -625,17 +633,19 @@
                     statsContainer.innerHTML = '';
                     const stats = ['stamina', 'attack', 'defense', 'luck'];
                     stats.forEach(stat => {
+                        const label = statLabels[stat] || stat; // 매핑 없으면 원래 키 사용
                         const statElement = document.createElement('div');
                         statElement.className = 'flex items-center justify-between';
                         statElement.innerHTML = `
-                            <span class="text-gray-300 font-semibold capitalize">${stat}</span>
-                            <div class="flex items-center space-x-2">
-                                <span id="${stat}-display" class="text-emerald-400 font-bold text-lg">${studentDataCache[stat]}</span>
-                                <button data-stat="${stat}" class="stat-plus-btn bg-gray-600 w-8 h-8 rounded-full text-white font-bold text-sm hover:bg-emerald-400 transition-colors">+</button>
-                            </div>
+                        <span class="text-gray-300 font-semibold">${label}</span>
+                        <div class="flex items-center space-x-2">
+                        <span id="${stat}-display" class="text-emerald-400 font-bold text-lg">${studentDataCache[stat]}</span>
+                        <button data-stat="${stat}" class="stat-plus-btn bg-gray-600 w-8 h-8 rounded-full text-white font-bold text-sm hover:bg-emerald-400 transition-colors">+</button>
+                        </div>
                         `;
                         statsContainer.appendChild(statElement);
                     });
+
 
                     document.querySelectorAll('.stat-plus-btn').forEach(button => {
                         button.addEventListener('click', handleStatIncrease);
@@ -1787,6 +1797,7 @@
 </body>
 
 </html>
+
 
 
 
