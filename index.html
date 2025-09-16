@@ -1593,6 +1593,20 @@
             }
         }
         
+        function handleStudentListClick(e) {
+            const studentBtn = e.target.closest('button.student-item');
+            if (studentBtn) {
+                const studentId = studentBtn.getAttribute('data-student-id');
+                const studentName = studentBtn.getAttribute('data-student-name');
+                renderGrowthLogsWithEvaluation(studentId, studentName);
+            }
+        }
+        
+        const studentList = document.getElementById('student-list');
+        if (studentList) {
+            studentList.addEventListener('click', handleStudentListClick);
+        }
+        
         // 특정 학생의 성장일지 목록 불러오기 (평가 버튼 조건부 표시)
         async function renderGrowthLogsWithEvaluation(studentId, studentName) {
             try {
@@ -1715,5 +1729,6 @@
 </body>
 
 </html>
+
 
 
