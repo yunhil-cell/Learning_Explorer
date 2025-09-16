@@ -1618,7 +1618,7 @@
                 } else {
                     querySnapshot.forEach(doc => {
                         const logData = doc.data();
-                        const logDate = logData.createdAt ? logData.createdAt.toDate().toLocaleDateString('ko-KR') : '날짜 없음';
+                        const logDate = logData.timestamp?.toDate().toLocaleString("ko-KR") || "날짜 없음";
                         const logElement = document.createElement('div');
                         logElement.classList.add('bg-gray-900', 'p-4', 'rounded-lg', 'shadow-inner', 'mb-2', 'relative');
                         
@@ -1729,6 +1729,7 @@
 </body>
 
 </html>
+
 
 
 
