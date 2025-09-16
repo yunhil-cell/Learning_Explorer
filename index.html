@@ -340,15 +340,15 @@
                                 <div id="student-list" class="flex flex-wrap gap-2">
                                 </div>
                             </div>
-                            <div id="growth-log-container" class="bg-gray-800 p-4 rounded-lg shadow-inner hidden">
-                            <h4 class="text-lg font-semibold mb-2" id="selected-student-name"></h4>
-                                <div id="growth-log-list">
-                                </div>
-                            </div>
+                            <div id="teacher-growth-log-container" class="bg-gray-800 p-4 rounded-lg shadow-inner hidden">
+                                <h4 class="text-lg font-semibold mb-2" id="selected-student-name"></h4>
+                                <div id="growth-log-list"></div>
+                            </div>                            
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
             <!-- Loading Spinner -->
             <div id="loading-spinner" class="hidden flex flex-col items-center justify-center p-8">
@@ -1526,7 +1526,7 @@
         
         // 기존 성장일지 관리 변수 재정의
         const studentListContainer = document.getElementById('student-list');
-        const growthLogContainer = document.getElementById('growth-log-container');
+        const growthLogContainer = document.getElementById('teacher-growth-log-container');
         const selectedStudentName = document.getElementById('selected-student-name');
         const growthLogList = document.getElementById('growth-log-list');
         
@@ -1547,7 +1547,7 @@
                 } else {
                     querySnapshot.forEach(doc => {
                         const logData = doc.data();
-                        const logDate = logData.createdAt ? logData.createdAt.toDate().toLocaleDateString('ko-KR') : '날짜 없음';
+                        const logDate = logData.timestamp ? logData.timestamp.toDate().toLocaleDateString('ko-KR') : '날짜 없음';
                         const logElement = document.createElement('div');
                         logElement.classList.add('bg-gray-900', 'p-4', 'rounded-lg', 'shadow-inner', 'mb-2', 'relative');
                         logElement.innerHTML = `
@@ -1729,6 +1729,7 @@
 </body>
 
 </html>
+
 
 
 
