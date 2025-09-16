@@ -49,7 +49,7 @@
         }
     </style>
 </head>
-
+//html 시작
 <body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4">
 
     <!-- Main Application Container -->
@@ -155,6 +155,7 @@
                 </form>
             </div>
 
+            //학생 대시보드
             <!-- 5. Student Dashboard View -->
             <div id="student-dashboard-view" class="view hidden">
                 <div class="flex justify-between items-center mb-6">
@@ -641,9 +642,11 @@
                         button.addEventListener('click', handleStatIncrease);
                     });
 
+                    //학생 대시보드 render
                     renderQuest(studentDataCache);
                     setupGrowthLogUIListener();
                     renderGrowthLog();
+                    renderMyGrowthLogs();
                     listenForRewards();
 
                 } else {
@@ -658,6 +661,43 @@
                 auth.signOut();
                 showView('landing');
             });
+        }
+        async function renderMyGrowthLogs() {
+            try {
+                const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+                const q = query(
+                    growthLogsRef,
+                    where("student_id", "==", userId),
+                    orderBy("timestamp", "desc")
+                );
+                const querySnapshot = await getDocs(q);
+                
+                const myGrowthLogList = document.getElementById("my-growth-log-list");
+                myGrowthLogList.innerHTML = "";
+                
+                if (querySnapshot.empty) {
+                    myGrowthLogList.innerHTML = '<p class="text-gray-400">아직 작성한 성장일지가 없습니다.</p>';
+                } else {
+                    querySnapshot.forEach(doc => {
+                        const logData = doc.data();
+                        const logDate = logData.timestamp?.toDate().toLocaleString("ko-KR") || "날짜 없음";
+                        
+                        const logElement = document.createElement("div");
+                        logElement.classList.add("bg-gray-800", "p-4", "rounded-lg", "mb-2");
+                        
+                logElement.innerHTML = `
+                <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
+                <p class="text-white mb-2">${logData.content}</p>
+                <p class="text-sm text-gray-500">평가: ${logData.evaluation || "아직 없음"}</p>
+                `;
+                        
+                        myGrowthLogList.appendChild(logElement);
+                    });
+                }
+            } catch (error) {
+                console.error("내 성장일지 불러오기 실패:", error);
+                showMessageModal("오류", "성장일지를 불러오는 데 실패했습니다.");
+            }
         }
         
         /**
@@ -1336,6 +1376,7 @@
             tabLogBtn.classList.add('border-emerald-400', 'text-emerald-400');
             setupGrowthLogUIListener();
             renderGrowthLog();
+            renderMyGrowthLogs();
         });
         tabShopBtn.addEventListener('click', () => {
             document.querySelectorAll('#dashboard-sections > div').forEach(div => div.classList.add('hidden'));
@@ -1725,10 +1766,49 @@
         if (studentList) {
             studentList.addEventListener('click', handleStudentListClick);
         }
+
+        async function renderMyGrowthLogs() {
+            try {
+                const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+                const q = query(
+                    growthLogsRef,
+                    where("student_id", "==", userId),   // 로그인한 학생 ID
+                    orderBy("timestamp", "desc")
+                );
+                const querySnapshot = await getDocs(q);
+                
+                const container = document.getElementById("growth-log-container");
+                container.innerHTML = ""; // 기존 안내 문구 제거
+
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p class="text-gray-400">아직 작성한 성장일지가 없습니다.</p>';
+                } else {
+                    querySnapshot.forEach(doc => {
+                        const logData = doc.data();
+                        const logDate = logData.timestamp?.toDate().toLocaleString("ko-KR") || "날짜 없음";
+                        
+                        const logElement = document.createElement("div");
+                        logElement.classList.add("bg-gray-700", "p-4", "rounded-lg");
+                        
+                        logElement.innerHTML = `
+                        <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
+                        <p class="text-white mb-2">${logData.content}</p>
+                        <p class="text-sm text-gray-500">평가: ${logData.evaluation || "아직 없음"}</p>
+                        `;
+                        
+                        container.appendChild(logElement);
+                    });
+                }
+            } catch (error) {
+                console.error("내 성장일지 불러오기 실패:", error);
+                showMessageModal("오류", "성장일지를 불러오는 데 실패했습니다.");
+            }
+        }
     </script>
 </body>
 
 </html>
+
 
 
 
