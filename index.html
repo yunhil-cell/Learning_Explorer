@@ -726,49 +726,97 @@
         /**
          * Renders the teacher dashboard with real-time data from Firestore.
          */
-        async function renderTeacherDashboard() {
-            showView('loading');
-
-            const pendingListContainer = document.getElementById('pending-students-list');
-            const registerRef = collection(db, `artifacts/${appId}/public/data/register`);
-            const qStudents = query(registerRef, where("status", "==", "대기중"));
-            onSnapshot(qStudents, (snapshot) => {
-                pendingListContainer.innerHTML = '';
-                if (snapshot.empty) {
-                    pendingListContainer.innerHTML = '<p class="text-gray-400 text-center">미승인 학생이 없습니다.</p>';
-                } else {
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const docId = doc.id;
-                        const card = document.createElement('div');
-                        card.className = 'bg-gray-800 rounded-2xl p-4 shadow-md flex items-center justify-between';
-                        card.innerHTML = `
-                            <div>
-                                <h4 class="text-lg font-semibold">${data.name} (${data.id})</h4>
-                                <p class="text-gray-400 text-sm">학년: ${data.grade}반: ${data.class} 번호: ${data.number}</p>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button data-action="approve" data-id="${docId}" class="approve-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">승인</button>
-                                <button data-action="reject" data-id="${docId}" class="reject-btn px-4 py-2 rounded-lg text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors">거절</button>
-                            </div>
-                        `;
-                        pendingListContainer.appendChild(card);
-                    });
-                    document.querySelectorAll('.approve-btn').forEach(btn => {
-                        btn.addEventListener('click', handleApproveRequest);
-                    });
-                    document.querySelectorAll('.reject-btn').forEach(btn => {
-                        btn.addEventListener('click', handleApproveRequest);
-                    });
-                }
-            });
-
-            const pendingLogsContainer = document.getElementById('pending-growth-logs-list');
-            const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-            const qLogs = query(logsRef, where("status", "==", "pending"));
+        async function renderTeacherDashboard(user) {
+            const teacherDashboardView = document.getElementById('teacher-dashboard-view');
+            teacherDashboardView.innerHTML = `
+            <div class="p-6">
+            <h2 class="text-3xl font-bold text-white mb-6">교사 대시보드</h2>
+            <div class="flex space-x-4 mb-6">
+                <button id="unverified-logs-tab-btn" class="tab-btn px-6 py-3 rounded-2xl font-semibold bg-gray-700 text-white hover:bg-gray-600 transition-colors">미확인 성장일지</button>
+                <button id="all-logs-tab-btn" class="tab-btn px-6 py-3 rounded-2xl font-semibold bg-gray-700 text-white hover:bg-gray-600 transition-colors">전체 학생 성장일지</button>
+            </div>
             
-            showView('teacherDashboard');
+            <div id="unverified-logs-section" class="tab-content">
+                <h3 class="text-2xl font-bold text-white mb-4">미확인 성장일지</h3>
+                <div id="unverified-log-list" class="space-y-4">
+                    </div>
+            </div>
+
+            <div id="all-logs-section" class="tab-content hidden">
+            <h3 class="text-2xl font-bold text-white mb-4">전체 학생 성장일지</h3>
+            <div id="student-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            </div>
+            </div>
+            </div>
+    `;
+
+    // 탭 버튼 및 컨테이너 요소 가져오기
+    const unverifiedLogsTabBtn = document.getElementById('unverified-logs-tab-btn');
+    const allLogsTabBtn = document.getElementById('all-logs-tab-btn');
+    const unverifiedLogsSection = document.getElementById('unverified-logs-section');
+    const allLogsSection = document.getElementById('all-logs-section');
+
+    // 탭 전환 로직
+    unverifiedLogsTabBtn.addEventListener('click', () => {
+        unverifiedLogsTabBtn.classList.replace('bg-gray-700', 'bg-gray-800');
+        allLogsTabBtn.classList.replace('bg-gray-800', 'bg-gray-700');
+        unverifiedLogsSection.classList.remove('hidden');
+        allLogsSection.classList.add('hidden');
+    });
+
+    allLogsTabBtn.addEventListener('click', () => {
+        allLogsTabBtn.classList.replace('bg-gray-700', 'bg-gray-800');
+        unverifiedLogsTabBtn.classList.replace('bg-gray-800', 'bg-gray-700');
+        allLogsSection.classList.remove('hidden');
+        unverifiedLogsSection.classList.add('hidden');
+        renderStudentList();
+    });
+
+    const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+    const unverifiedLogsContainer = document.getElementById('unverified-log-list');
+
+    // 미확인 성장일지 실시간 리스너
+    const qUnverifiedLogs = query(logsRef, where("status", "==", "pending"));
+    onSnapshot(qUnverifiedLogs, (snapshot) => {
+        unverifiedLogsContainer.innerHTML = '';
+        if (snapshot.empty) {
+            unverifiedLogsContainer.innerHTML = '<p class="text-gray-400 text-center">미확인 성장일지가 없습니다.</p>';
+        } else {
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const logId = doc.id;
+                const card = document.createElement('div');
+                card.className = 'bg-gray-800 rounded-2xl p-4 shadow-md space-y-2';
+                card.innerHTML = `
+                    <p class="text-sm text-gray-400">${data.student_name} (${data.student_id})</p>
+                    <p class="text-white text-lg">${data.content}</p>
+                    <div class="flex space-x-2 justify-end">
+                        <button data-log-id="${logId}" data-action="approved" class="evaluate-btn px-4 py-2 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors">최고</button>
+                        <button data-log-id="${logId}" data-action="rejected" class="evaluate-btn px-4 py-2 rounded-lg text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors">확인</button>
+                    </div>
+                `;
+                unverifiedLogsContainer.appendChild(card);
+            });
+            document.querySelectorAll('.evaluate-btn').forEach(btn => {
+                btn.addEventListener('click', handleEvaluateLog);
+            });
         }
+    });
+
+    async function handleEvaluateLog(e) {
+        const logId = e.target.getAttribute('data-log-id');
+        const evaluation = e.target.getAttribute('data-action');
+        const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
+
+        try {
+            await updateDoc(logRef, { status: evaluation });
+            showMessageModal('평가 완료', `성장일지가 '${evaluation === 'approved' ? '최고' : '확인'}'으로 평가되었습니다.`);
+        } catch (error) {
+            console.error("평가 업데이트 실패:", error);
+            showMessageModal('오류', '성장일지 평가 중 오류가 발생했습니다.');
+        }
+    }
+}
 
         /**
          * Renders the student's daily quest status and completed quests.
@@ -1710,6 +1758,7 @@ async function renderUnverifiedLogs() {
 </body>
 
 </html>
+
 
 
 
