@@ -768,10 +768,6 @@
             const qLogs = query(logsRef, where("status", "==", "pending"));
             
             showView('teacherDashboard');
-            
-            // 👇 이 부분에 아래 코드를 추가하세요.
-            // 성장일지 관리 탭 활성화 시 초기 렌더링
-            renderUnverifiedLogs();
         }
 
         /**
@@ -1521,7 +1517,7 @@
         saveStatsBtn.addEventListener('click', saveStats);
         document.getElementById('growth-log-form').addEventListener('submit', handleGrowthLogSubmission);
 
-// 탭 요소 선택
+        // 탭 요소 선택
         const unverifiedLogsTabBtn = document.getElementById('unverified-logs-tab-btn');
         const allLogsTabBtn = document.getElementById('all-logs-tab-btn');
         const unverifiedLogsSection = document.getElementById('unverified-logs-section');
@@ -1535,13 +1531,13 @@
         const growthLogList = document.getElementById('growth-log-list');
         
         // 미확인 성장일지 불러오기 및 렌더링
-async function renderUnverifiedLogs() {
+        async function renderUnverifiedLogs() {
             try {
                 unverifiedLogList.innerHTML = '<p class="text-gray-400">불러오는 중...</p>';
                 const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
                 
                 // 쿼리 수정: rewarded 대신 status 필드를 사용합니다.
-                const q = query(logsRef, where("status", "==", "pending"), orderBy("createdAt", "desc"));
+                const q = query(logsRef, where("status", "==", "pending"), orderBy("timestamp", "desc"));
                 
                 const querySnapshot = await getDocs(q);
         
@@ -1601,7 +1597,7 @@ async function renderUnverifiedLogs() {
         async function renderGrowthLogsWithEvaluation(studentId, studentName) {
             try {
                 const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-                const q = query(growthLogsRef, where("studentId", "==", studentId), orderBy("createdAt", "desc"));
+                const q = query(growthLogsRef, where("studentId", "==", studentId), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(q);
         
                 selectedStudentName.textContent = `${studentName} 학생의 성장일지`;
