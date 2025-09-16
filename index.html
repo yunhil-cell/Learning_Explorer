@@ -1089,7 +1089,7 @@
                 }
                 
                 await addDoc(logsCollectionRef, {
-                    student_id: userId,
+                    student_id: studentData.id,
                     student_name: studentData.name,
                     content: logText,
                     status: 'pending',
@@ -1729,6 +1729,7 @@
 </body>
 
 </html>
+
 
 
 
