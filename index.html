@@ -1878,7 +1878,7 @@
         const studentDetailModal = document.getElementById('student-detail-modal');
         const closeStudentDetailBtn = document.getElementById('close-student-detail');
         
-        document.addEventListener('click', async (e) => {
+        studentsOverviewList.addEventListener('click', async (e) => {
             const btn = e.target.closest('button[data-student-id]');
             if (!btn) return;
             const sid = btn.getAttribute('data-student-id');
@@ -1925,3 +1925,4 @@
 </body>
 
 </html>
+
