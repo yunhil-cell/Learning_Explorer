@@ -995,7 +995,7 @@
         }
 
         /**
-        * Renders only assigned quests and completed quests for the student.
+        * Renders assigned quests (with complete button) and completed quests (3 at a time with [보기] + 더보기).
         * @param {Object} studentData - The student's data from Firestore.
         */
         async function renderQuest(studentData) {
@@ -1033,58 +1033,67 @@
                         
                         const isCompleted = !!studentData.quests?.[questId]?.completed_at;
                         
-                        // 완료된 건 여기선 제외 (완료 목록에서 따로 보여줌)
                         if (!isCompleted) {
                             const card = document.createElement('div');
                             card.className = 'bg-gray-700 rounded-lg p-4 space-y-2 mb-3';
                             card.innerHTML = `
                             <h5 class="text-white font-semibold">${qd.name || '(제목 없음)'}</h5>
                             <p class="text-gray-300 text-sm">${qd.description || ''}</p>
-                            <p class="text-gray-400 text-xs">보상: EXP ${expReward} · 다이아 ${diaReward} · 성장포인트 ${growthReward}</p>
+                            <p class="text-gray-400 text-xs">보상: 경험치 ${expReward} · 다이아 ${diaReward} · 성장포인트 ${growthReward}</p>
+                            <button class="complete-quest-btn w-full mt-2 px-3 py-1 bg-emerald-500 text-white rounded"
+                            data-quest-id="${questId}">
+                            퀘스트 완료
+                            </button>
                             `;
                             dailyQuestContainer.appendChild(card);
+                            
+                            // 완료 버튼 이벤트
+                            card.querySelector('.complete-quest-btn').addEventListener('click', async (e) => {
+                                const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+                                
+                                // 완료 기록 추가
+                                await updateDoc(studentRef, {
+                                    [`quests.${questId}`]: {
+                                        completed_at: serverTimestamp(),
+                                        description: qd.des치 ${rewards.exp || 0}, 다이아 ${rewards.dia || 0}, 성장포인트 ${rewards.growth || 0}</p>
+                            <p class="text-xs text-gray-400">완료일: ${date}</p>
+                            `;
+                            
+                            // 토글 이벤트
+                            header.querySelector('.toggle-detail').addEventListener('click', () => {
+                                detail.classList.toggle('hidden');
+                            });
+                            
+                            wrapper.appendChild(header);
+                            wrapper.appendChild(detail);
+                            completedQuestsContainer.appendChild(wrapper);
+                        });
+                        
+                        // 더보기 버튼
+                        if (list.length > count) {
+                            const moreBtn = document.createElement('button');
+                            moreBtn.className = 'w-full mt-2 px-3 py-1 bg-gray-600 text-white rounded';
+                            moreBtn.textContent = '더보기';
+                            moreBtn.addEventListener('click', () => {
+                                visibleCount += 3;
+                                renderCompleted(list, visibleCount);
+                            });
+                            completedQuestsContainer.appendChild(moreBtn);
                         }
-                    });
-                }
-            } catch (err) {
-                console.error('부여된 퀘스트 불러오기 실패:', err);
-                const errorMsg = document.createElement('p');
-                errorMsg.className = 'text-red-400';
-                errorMsg.textContent = '부여된 퀘스트를 불러오는 중 오류가 발생했습니다.';
-                dailyQuestContainer.appendChild(errorMsg);
-            }
-            
-            // 2) 완료한 퀘스트 목록
-            if (studentData.quests) {
-                const completedQuests = Object.entries(studentData.quests).filter(([_, v]) => v.completed_at);
-                if (completedQuests.length > 0) {
-                    completedQuests.sort((a, b) => b[1].completed_at.toDate() - a[1].completed_at.toDate());
-                    completedQuests.forEach(([key, value]) => {
-                        const questCard = document.createElement('div');
-                        questCard.className = 'bg-gray-700 rounded-lg p-3 shadow-sm';
-                        const questName = key;
-                        const date = value.completed_at.toDate().toLocaleDateString();
-                        questCard.innerHTML = `
-                        <div class="flex items-center justify-between">
-                        <p class="text-gray-300 font-semibold">${questName}</p>
-                        <p class="text-sm text-emerald-400">완료</p>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-1">${date}에 완료됨</p>
-                        `;
-                        completedQuestsContainer.appendChild(questCard);
-                    });
+                    }
+                    
+                    renderCompleted(completedQuests, visibleCount);
                 } else {
                     completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
                 }
             } else {
                 completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
             }
-        }
-        
-        /**
-         * Sets up a real-time listener for the growth log UI state.
-         */
-        function setupGrowthLogUIListener() {
+            
+            /**
+            * Sets up a real-time listener for the growth log UI state.
+            */
+            function setupGrowthLogUIListener() {
             if (!userId) return;
 
             const submissionForm = document.getElementById('growth-log-form');
@@ -2287,5 +2296,6 @@
 </body>
 
 </html>
+
 
 
