@@ -1082,18 +1082,36 @@
             completedQuests.sort((a, b) => b[1].completed_at.toDate() - a[1].completed_at.toDate());
             
             let visibleCount = 3;
-            function renderCompleted(list, count) {
+            async function renderCompleted(list, count) {
                 completedQuestsContainer.innerHTML = '';
-                list.slice(0, count).forEach(([qid, value]) => {
+                
+                // 화면에 보여줄 범위의 완료 퀘스트만 선택
+                const slice = list.slice(0, count);
+                
+                for (const [qid, value] of slice) {
+                    // 퀘스트 제목 조회 (name 필드). 실패 시 fallback으로 qid 표시
+                    let questName = qid;
+                    try {
+                        const questRef = doc(db, `artifacts/${appId}/public/data/quests`, qid);
+                        const questSnap = await getDoc(questRef);
+                        if (questSnap.exists()) {
+                            const qd = questSnap.data();
+                            questName = qd?.name || qid;
+                        }
+                    } catch (e) {
+                        console.error('퀘스트 제목 불러오기 실패:', e);
+                    }
+                    
                     const rewards = value.rewards || {};
                     const date = value.completed_at.toDate().toLocaleString();
+                    
                     const wrapper = document.createElement('div');
                     wrapper.className = 'bg-gray-700 rounded mb-2';
                     
                     const header = document.createElement('div');
                     header.className = 'flex justify-between items-center p-2';
                     header.innerHTML = `
-                    <span class="text-gray-300 font-semibold">${qid}</span>
+                    <span class="text-gray-300 font-semibold">${questName}</span>
                     <button class="toggle-detail px-2 py-1 bg-blue-500 text-white rounded text-sm">보기</button>
                     `;
                     
@@ -1112,7 +1130,7 @@
                     wrapper.appendChild(header);
                     wrapper.appendChild(detail);
                     completedQuestsContainer.appendChild(wrapper);
-                });
+                }
                 
                 if (list.length > count) {
                     const moreBtn = document.createElement('button');
@@ -1126,6 +1144,7 @@
                 }
             }
             
+            // 최초 렌더 호출
             renderCompleted(completedQuests, visibleCount);
         }
         
@@ -2280,6 +2299,7 @@
 </body>
 
 </html>
+
 
 
 
