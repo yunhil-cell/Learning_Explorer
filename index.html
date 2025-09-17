@@ -995,7 +995,7 @@
         }
 
         /**
-        * Renders assigned quests (with complete button) and completed quests (3 at a time with [보기] + 더보기).
+        * Renders assigned quests (with complete button) and completed quests (accordion + 3 at a time "더보기").
         * @param {Object} studentData - The student's data from Firestore.
         */
         async function renderQuest(studentData) {
@@ -1017,12 +1017,7 @@
                     noAssigned.className = 'text-gray-400 mb-4';
                     noAssigned.textContent = '현재 부여된 퀘스트가 없습니다.';
                     dailyQuestContainer.appendChild(noAssigned);
-                } else {
-                    const title = document.createElement('h4');
-                    title.className = 'text-lg font-semibold text-white mb-2';
-                    title.textContent = '현재 부여된 퀘스트';
-                    dailyQuestContainer.appendChild(title);
-                    
+                } else {                 
                     assignedSnap.forEach(docSnap => {
                         const qd = docSnap.data();
                         const questId = docSnap.id;
@@ -1048,113 +1043,96 @@
                             dailyQuestContainer.appendChild(card);
                             
                             // 완료 버튼 이벤트
-                            card.querySelector('.complete-quest-btn').addEventListener('click', async (e) => {
+                            card.querySelector('.complete-quest-btn').addEventListener('click', async () => {
                                 const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                                 
-                                // 완료 기록 추가
-                               await updateDoc(studentRef, {
-                                   [`quests.${questId}`]: {
-                                       completed_at: serverTimestamp(),
-                                       description: qd.description || '',
-                                       rewards: {
-                                           exp: expReward,
-                                           dia: diaReward,
-                                           growth: growthReward
-                                       }
-                                   },
-                                   exp: increment(expReward),
-                                   diamonds: increment(diaReward),
-                                   growth_point: increment(growthReward)
-                               });
-                            
-                            // 토글 이벤트
-                            header.querySelector('.toggle-detail').addEventListener('click', () => {
-                                detail.classList.toggle('hidden');
+                                await updateDoc(studentRef, {
+                                    [`quests.${questId}`]: {
+                                        completed_at: serverTimestamp(),
+                                        description: qd.description || '',
+                                        rewards: { exp: expReward, dia: diaReward, growth: growthReward }
+                                    },
+                                    exp: increment(expReward),
+                                    diamonds: increment(diaReward),
+                                    growth_points: increment(growthReward)
+                                });
+                                
+                                showMessageModal('완료', `${qd.name || '퀘스트'}를 완료했습니다!`);
+                                const updated = await getDoc(studentRef);
+                                renderQuest(updated.data());
                             });
-                            
-                            wrapper.appendChild(header);
-                            wrapper.appendChild(detail);
-                            completedQuestsContainer.appendChild(wrapper);
-                        });
-                        
-                        // 더보기 버튼
-                        if (list.length > count) {
-                            const moreBtn = document.createElement('button');
-                            moreBtn.className = 'w-full mt-2 px-3 py-1 bg-gray-600 text-white rounded';
-                            moreBtn.textContent = '더보기';
-                            moreBtn.addEventListener('click', () => {
-                                visibleCount += 3;
-                                renderCompleted(list, visibleCount);
-                            });
-                            completedQuestsContainer.appendChild(moreBtn);
                         }
-                    }
-                    
-                    renderCompleted(completedQuests, visibleCount);
-                } else {
-                    completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
+                    });
                 }
-            } else {
-                completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
+            } catch (err) {
+                console.error('부여된 퀘스트 불러오기 실패:', err);
+                const errorMsg = document.createElement('p');
+                errorMsg.className = 'text-red-400';
+                errorMsg.textContent = '부여된 퀘스트를 불러오는 중 오류가 발생했습니다.';
+                dailyQuestContainer.appendChild(errorMsg);
             }
             
-            /**
-            * Sets up a real-time listener for the growth log UI state.
-            */
-            function setupGrowthLogUIListener() {
-            if (!userId) return;
-
-            const submissionForm = document.getElementById('growth-log-form');
-            const statusContainer = document.getElementById('growth-log-status');
-            const logTextarea = document.getElementById('growth-log-text');
-
-            const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-
-            // NOTE: Firestore requires a composite index for this query.
-            // If you get a "The query requires an index" error, follow the link in the console
-            // to create the index. It is a one-time setup for your database.
-            const q = query(logsCollectionRef,
-                where("student_id", "==", userId),
-                where("timestamp", ">=", todayStart)
-            );
-
-            onSnapshot(q, (querySnapshot) => {
-                if (!querySnapshot.empty) {
-                    submissionForm.classList.add('hidden');
-                    statusContainer.classList.remove('hidden');
-                    const logData = querySnapshot.docs[0].data();
-                    let statusText = '';
-                    let statusColor = '';
+            // 2) 완료한 퀘스트 (최근 3개, 아코디언, 더보기)
+            const questsObj = studentData.quests || {};
+            let completedQuests = Object.entries(questsObj).filter(([_, v]) => v?.completed_at);
+            if (completedQuests.length === 0) {
+                completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
+                return;
+            }
+            
+            completedQuests.sort((a, b) => b[1].completed_at.toDate() - a[1].completed_at.toDate());
+            
+            let visibleCount = 3;
+            function renderCompleted(list, count) {
+                completedQuestsContainer.innerHTML = '';
+                list.slice(0, count).forEach(([qid, value]) => {
+                    const rewards = value.rewards || {};
+                    const date = value.completed_at.toDate().toLocaleString();
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'bg-gray-700 rounded mb-2';
                     
-                    switch (logData.status) {
-                        case 'pending':
-                            statusText = `<i class="fa-solid fa-hourglass-half text-yellow-400 mr-2"></i>승인 대기 중...`;
-                            statusColor = 'bg-yellow-900 text-yellow-300';
-                            break;
-                        case 'approved':
-                            statusText = `<i class="fa-solid fa-check-circle text-emerald-400 mr-2"></i>오늘의 성장일지 최고!`;
-                            statusColor = 'bg-emerald-900 text-emerald-300';
-                            break;
-                        case 'rejected':
-                            statusText = `<i class="fa-solid fa-check text-gray-400 mr-2"></i>오늘의 성장일지가 확인되었습니다.`;
-                            statusColor = 'bg-gray-700 text-gray-300';
-                            break;
-                    }
-                    statusContainer.innerHTML = statusText;
-                    statusContainer.className = `mt-4 p-4 rounded-lg text-center font-semibold ${statusColor}`;
-                } else {
-                    submissionForm.classList.remove('hidden');
-                    statusContainer.classList.add('hidden');
-                    logTextarea.value = '';
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center p-2';
+                    header.innerHTML = `
+                    <span class="text-gray-300 font-semibold">${qid}</span>
+                    <button class="toggle-detail px-2 py-1 bg-blue-500 text-white rounded text-sm">보기</button>
+                    `;
+                    
+                    const detail = document.createElement('div');
+                    detail.className = 'hidden px-3 pb-3 text-sm text-gray-300';
+                    detail.innerHTML = `
+                    <p class="mb-1">설명: ${value.description || ''}</p>
+                    <p class="mb-1">보상: 경험치 ${rewards.exp || 0}, 다이아 ${rewards.dia || 0}, 성장포인트 ${rewards.growth || 0}</p>
+                    <p class="text-xs text-gray-400">완료일: ${date}</p>
+                    `;
+                    
+                    header.querySelector('.toggle-detail').addEventListener('click', () => {
+                        detail.classList.toggle('hidden');
+                    });
+                    
+                    wrapper.appendChild(header);
+                    wrapper.appendChild(detail);
+                    completedQuestsContainer.appendChild(wrapper);
+                });
+                
+                if (list.length > count) {
+                    const moreBtn = document.createElement('button');
+                    moreBtn.className = 'w-full mt-2 px-3 py-1 bg-gray-600 text-white rounded';
+                    moreBtn.textContent = '더보기';
+                    moreBtn.addEventListener('click', () => {
+                        visibleCount += 3;
+                        renderCompleted(list, visibleCount);
+                    });
+                    completedQuestsContainer.appendChild(moreBtn);
                 }
-            });
+            }
+            
+            renderCompleted(completedQuests, visibleCount);
         }
         
         /**
-         * Renders the student's growth log history.
-         */
+        * Renders the student's growth log history.
+        */
         function renderGrowthLog() {
             const logContainer = document.getElementById('growth-log-container');
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
@@ -1953,13 +1931,13 @@
                         // 최고 → 경험치 +30, 다이아 +10
                         await updateDoc(studentRef, {
                             exp: increment(30),
-                            dia: increment(10)
+                            diamonds: increment(10)
                         });
                     } else {
                         // 확인 → 경험치 +20, 다이아 +10
                         await updateDoc(studentRef, {
                             exp: increment(20),
-                            dia: increment(10)
+                            diamonds: increment(10)
                         });
                     }
                     
@@ -2304,6 +2282,7 @@
 </body>
 
 </html>
+
 
 
 
