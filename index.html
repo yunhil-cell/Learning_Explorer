@@ -436,7 +436,76 @@
                         </div>
                         
                         <div id="quest-manage-section" class="hidden">
-                            <p class="text-gray-400">신규 퀘스트 등록 폼이 여기에 들어갑니다.</p>
+                            <h4 class="text-lg font-semibold mb-4">신규 퀘스트 등록</h4>
+                            <form id="quest-form" class="space-y-4 bg-gray-800 p-4 rounded-lg">
+                                <!-- 퀘스트 이름 -->
+                                <div>
+                                    <label class="block text-gray-300 mb-1">퀘스트 이름</label>
+                                    <input id="quest-name" type="text" required
+                                        class="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                </div>
+                                
+                                <!-- 퀘스트 설명 -->
+                                <div>
+                                    <label class="block text-gray-300 mb-1">퀘스트 설명</label>
+                                    <textarea id="quest-desc" rows="3" required
+                                        class="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600"></textarea>
+                                </div>
+                                
+                                <!-- 보상 -->
+                                <div>
+                                    <label class="block text-gray-300 mb-1">보상</label>
+                                    <div class="flex space-x-2">
+                                        <input id="reward-exp" type="number" min="0" value="0" placeholder="경험치"
+                                            class="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                        <input id="reward-dia" type="number" min="0" value="0" placeholder="다이아"
+                                            class="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                        <input id="reward-growth" type="number" min="0" value="0" placeholder="성장 포인트"
+                                            class="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                    </div>
+                                </div>
+                                
+                                <!-- 학생 선택 -->
+                                <div>
+                                    <label class="block text-gray-300 mb-1">부여할 학생</label>
+                                    <div id="quest-student-list" class="space-y-1 max-h-40 overflow-y-auto bg-gray-700 p-2 rounded">
+                                        <!-- 체크박스로 학생 목록 표시 -->
+                                    </div>
+                                    <button type="button" id="select-all-students"
+                                        class="mt-2 px-3 py-1 bg-gray-600 text-white rounded hover:bg-emerald-500">전체 선택</button>
+                                </div>
+                                
+                                <!-- 기간 -->
+                                <div>
+                                    <label class="block text-gray-300 mb-1">퀘스트 기간</label>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <input type="checkbox" id="enable-period">
+                                        <label for="enable-period" class="text-gray-300">기간 설정</label>
+                                    </div>
+                                    <div id="quest-period-inputs" class="hidden space-x-2">
+                                        <input id="quest-start" type="date" class="px-2 py-1 rounded bg-gray-700 text-white border border-gray-600">
+                                        <input id="quest-end" type="date" class="px-2 py-1 rounded bg-gray-700 text-white border border-gray-600">
+                                    </div>
+                                </div>
+                                
+                                <!-- 반복 여부 -->
+                                <div>
+                                    <label class="block text-gray-300 mb-1">반복 여부</label>
+                                    <select id="quest-repeat"
+                                        class="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                        <option value="none">없음</option>
+                                        <option value="daily">일간</option>
+                                        <option value="weekly">주간</option>
+                                        <option value="monthly">월간</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- 제출 -->
+                                <div class="flex justify-end space-x-2">
+                                    <button type="submit" class="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600">등록</button>
+                                    <button type="reset" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">초기화</button>
+                                </div>
+                            </form>
                         </div>
                         
                         <div id="quest-history-section" class="hidden">
@@ -2103,11 +2172,85 @@
         questTabListBtn.addEventListener("click", () => switchQuestSubTab(questTabListBtn, questListSection));
         questTabManageBtn.addEventListener("click", () => switchQuestSubTab(questTabManageBtn, questManageSection));
         questTabHistoryBtn.addEventListener("click", () => switchQuestSubTab(questTabHistoryBtn, questHistorySection));
+
+        // 학생 목록 불러오기 → 체크박스 렌더링
+        async function renderQuestStudentList() {
+            const container = document.getElementById("quest-student-list");
+            container.innerHTML = "<p class='text-gray-400'>불러오는 중...</p>";
+            
+            const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+            const snapshot = await getDocs(studentsRef);
+            
+            container.innerHTML = "";
+            snapshot.forEach(docSnap => {
+                const s = docSnap.data();
+                const div = document.createElement("div");
+                div.innerHTML = `
+                <label class="flex items-center space-x-2 text-gray-200">
+                <input type="checkbox" value="${docSnap.id}" class="quest-student-checkbox">
+                <span>${s.name} (${s.id || docSnap.id})</span>
+                </label>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        // 전체 선택 버튼
+        document.getElementById("select-all-students").addEventListener("click", () => {
+            document.querySelectorAll(".quest-student-checkbox").forEach(cb => cb.checked = true);
+        });
+        
+        // 기간 체크박스
+        document.getElementById("enable-period").addEventListener("change", (e) => {
+            document.getElementById("quest-period-inputs").classList.toggle("hidden", !e.target.checked);
+        });
+        
+        // 퀘스트 등록
+        document.getElementById("quest-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById("quest-name").value.trim();
+            const desc = document.getElementById("quest-desc").value.trim();
+            const exp = parseInt(document.getElementById("reward-exp").value) || 0;
+            const dia = parseInt(document.getElementById("reward-dia").value) || 0;
+            const growth = parseInt(document.getElementById("reward-growth").value) || 0;
+            
+            const assigned = Array.from(document.querySelectorAll(".quest-student-checkbox:checked"))
+                .map(cb => cb.value);
+            
+            let startDate = null, endDate = null;
+            if (document.getElementById("enable-period").checked) {
+                startDate = document.getElementById("quest-start").value || null;
+                endDate = document.getElementById("quest-end").value || null;
+            }
+            
+            const repeat = document.getElementById("quest-repeat").value;
+            
+            if (!name || !desc) {
+                showMessageModal("오류", "퀘스트 이름과 설명을 입력하세요.");
+                return;
+            }
+            
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/public/data/quests`), {
+                    name,
+                    description: desc,
+                    rewards: { exp, dia, growth },
+                    assigned_students: assigned,
+                    start_date: startDate,
+                    end_date: endDate,
+                    repeat,
+                    created_at: new Date()
+                });
+                showMessageModal("완료", "퀘스트가 등록되었습니다.");
+                e.target.reset();
+                renderQuestStudentList(); // 체크박스 초기화
+            } catch (err) {
+                console.error("퀘스트 등록 실패:", err);
+                showMessageModal("오류", "퀘스트 등록 중 문제가 발생했습니다.");
+            }
+        });
     </script>
 </body>
 
 </html>
-
-
-
-
