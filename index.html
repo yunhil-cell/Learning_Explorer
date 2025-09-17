@@ -310,6 +310,9 @@
                         class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">성장일지 관리</button>
                     <button id="teacher-tab-students"
                         class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">학생 정보 확인</button>
+                    <button id="teacher-tab-quest"
+                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">퀘스트 관리</button>
+
                 </div>
 
                 <!-- Teacher Tab Sections -->
@@ -414,6 +417,30 @@
                             
                             <!-- 닫기 -->
                             <button id="close-student-detail" class="mt-6 w-full px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">닫기</button>
+                        </div>
+                    </div>
+                    <!-- 퀘스트 관리 탭 전체 -->
+                    <div id="teacher-quest-section" class="hidden">
+                        <h3 class="text-xl font-bold mb-4 text-yellow-300">퀘스트 관리</h3>
+                        
+                        <!-- 서브탭 버튼 -->
+                        <div class="flex mb-4 space-x-2">
+                            <button id="quest-tab-list" class="px-4 py-2 text-sm font-medium border-b-2 border-yellow-400 text-yellow-400">퀘스트 목록</button>
+                            <button id="quest-tab-manage" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white hover:border-white">퀘스트 등록</button>
+                            <button id="quest-tab-history" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white hover:border-white">퀘스트 기록</button>
+                        </div>
+                        
+                        <!-- 서브탭 콘텐츠 -->
+                        <div id="quest-list-section">
+                            <p class="text-gray-400">진행 중인 퀘스트 목록이 여기에 표시됩니다.</p>
+                        </div>
+                        
+                        <div id="quest-manage-section" class="hidden">
+                            <p class="text-gray-400">신규 퀘스트 등록 폼이 여기에 들어갑니다.</p>
+                        </div>
+                        
+                        <div id="quest-history-section" class="hidden">
+                            <p class="text-gray-400">종료된 퀘스트 기록이 여기에 표시됩니다.</p>
                         </div>
                     </div>
                 </div>
@@ -2033,10 +2060,54 @@
         setupIncrement("exp", "경험치", "exp");
         setupIncrement("dia", "다이아", "diamonds");
         setupIncrement("growth", "성장 포인트", "growth_points");
+
+        // 상위 탭 버튼
+        const teacherTabQuestBtn = document.getElementById("teacher-tab-quest");
+        const teacherQuestSection = document.getElementById("teacher-quest-section");
+        
+        // 서브탭 버튼
+        const questTabListBtn = document.getElementById("quest-tab-list");
+        const questTabManageBtn = document.getElementById("quest-tab-manage");
+        const questTabHistoryBtn = document.getElementById("quest-tab-history");
+
+        // 서브탭 콘텐츠
+        const questListSection = document.getElementById("quest-list-section");
+        const questManageSection = document.getElementById("quest-manage-section");
+        const questHistorySection = document.getElementById("quest-history-section");
+        
+        // 교사 대시보드 탭 전환
+        teacherTabQuestBtn.addEventListener("click", () => {
+            document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
+            teacherQuestSection.classList.remove('hidden');
+            document.querySelectorAll('#teacher-dashboard-view .border-b-2').forEach(btn => {
+                btn.classList.remove('border-yellow-400', 'text-yellow-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            teacherTabQuestBtn.classList.remove('border-transparent', 'text-gray-400');
+            teacherTabQuestBtn.classList.add('border-yellow-400', 'text-yellow-400');
+        });
+        
+        // 퀘스트 서브탭 전환
+        function switchQuestSubTab(activeBtn, activeSection) {
+            [questTabListBtn, questTabManageBtn, questTabHistoryBtn].forEach(btn => {
+                btn.classList.remove('border-yellow-400', 'text-yellow-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            activeBtn.classList.remove('border-transparent', 'text-gray-400');
+            activeBtn.classList.add('border-yellow-400', 'text-yellow-400');
+            
+            [questListSection, questManageSection, questHistorySection].forEach(sec => sec.classList.add('hidden'));
+            activeSection.classList.remove('hidden');
+        }
+        
+        questTabListBtn.addEventListener("click", () => switchQuestSubTab(questTabListBtn, questListSection));
+        questTabManageBtn.addEventListener("click", () => switchQuestSubTab(questTabManageBtn, questManageSection));
+        questTabHistoryBtn.addEventListener("click", () => switchQuestSubTab(questTabHistoryBtn, questHistorySection));
     </script>
 </body>
 
 </html>
+
 
 
 
