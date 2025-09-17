@@ -995,73 +995,81 @@
         }
 
         /**
-         * Renders the student's daily quest status and completed quests.
-         * @param {Object} studentData - The student's data from Firestore.
-         */
+        * Renders only assigned quests and completed quests for the student.
+        * @param {Object} studentData - The student's data from Firestore.
+        */
         async function renderQuest(studentData) {
             const dailyQuestContainer = document.getElementById('daily-quest-container');
             const completedQuestsContainer = document.getElementById('completed-quests-container');
             
             dailyQuestContainer.innerHTML = '';
             completedQuestsContainer.innerHTML = '';
-
-            // Get a single daily quest from Firestore
-            const questsRef = collection(db, `artifacts/${appId}/public/data/quests`);
-            const q = query(questsRef, where("type", "==", "daily"), limit(1));
-            const querySnapshot = await getDocs(q);
             
-            if (querySnapshot.empty) {
-                dailyQuestContainer.innerHTML = '<p class="text-gray-400">오늘의 퀘스트가 없습니다.</p>';
-            } else {
-                const questDoc = querySnapshot.docs[0];
-                const questData = questDoc.data();
-                const questId = questDoc.id;
-
-                const questCompletedAt = studentData.quests?.[questId]?.completed_at;
-                const today = new Date().toISOString().split('T')[0];
-
-                const isCompletedToday = questCompletedAt && questCompletedAt.toDate().toISOString().split('T')[0] === today;
+            const questsRef = collection(db, `artifacts/${appId}/public/data/quests`);
+            
+            // 1) 현재 부여된 퀘스트
+            try {
+                const qAssigned = query(questsRef, where("assigned_students", "array-contains", userId));
+                const assignedSnap = await getDocs(qAssigned);
                 
-                if (isCompletedToday) {
-                    const card = document.createElement('div');
-                    card.className = 'bg-gray-700 rounded-lg p-4 flex items-center justify-between';
-                    card.innerHTML = `
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-300">${questData.title}</h4>
-                            <p class="text-sm text-emerald-400">퀘스트 완료!</p>
-                        </div>
-                        <i class="fa-solid fa-check-circle text-2xl text-emerald-400"></i>
-                    `;
-                    dailyQuestContainer.appendChild(card);
+                if (assignedSnap.empty) {
+                    const noAssigned = document.createElement('p');
+                    noAssigned.className = 'text-gray-400 mb-4';
+                    noAssigned.textContent = '현재 부여된 퀘스트가 없습니다.';
+                    dailyQuestContainer.appendChild(noAssigned);
                 } else {
-                    const card = document.createElement('div');
-                    card.className = 'bg-gray-700 rounded-lg p-4 space-y-4';
-                    card.innerHTML = `
-                        <h4 class="text-lg font-semibold text-white">${questData.title}</h4>
-                        <p class="text-gray-300">${questData.description} (경험치 +${questData.exp_reward}, 성장 포인트 +${questData.gp_reward})</p>
-                        <button id="complete-quest-btn" data-quest-id="${questId}" class="w-full p-2 rounded-lg text-white font-semibold btn-primary">퀘스트 완료</button>
-                    `;
-                    dailyQuestContainer.appendChild(card);
-                    document.getElementById('complete-quest-btn').addEventListener('click', handleQuestCompletion);
+                    const title = document.createElement('h4');
+                    title.className = 'text-lg font-semibold text-white mb-2';
+                    title.textContent = '현재 부여된 퀘스트';
+                    dailyQuestContainer.appendChild(title);
+                    
+                    assignedSnap.forEach(docSnap => {
+                        const qd = docSnap.data();
+                        const questId = docSnap.id;
+                        const rewards = qd.rewards || {};
+                        const expReward = rewards.exp || 0;
+                        const diaReward = rewards.dia || 0;
+                        const growthReward = rewards.growth || 0;
+                        
+                        const isCompleted = !!studentData.quests?.[questId]?.completed_at;
+                        
+                        // 완료된 건 여기선 제외 (완료 목록에서 따로 보여줌)
+                        if (!isCompleted) {
+                            const card = document.createElement('div');
+                            card.className = 'bg-gray-700 rounded-lg p-4 space-y-2 mb-3';
+                            card.innerHTML = `
+                            <h5 class="text-white font-semibold">${qd.name || '(제목 없음)'}</h5>
+                            <p class="text-gray-300 text-sm">${qd.description || ''}</p>
+                            <p class="text-gray-400 text-xs">보상: EXP ${expReward} · 다이아 ${diaReward} · 성장포인트 ${growthReward}</p>
+                            `;
+                            dailyQuestContainer.appendChild(card);
+                        }
+                    });
                 }
+            } catch (err) {
+                console.error('부여된 퀘스트 불러오기 실패:', err);
+                const errorMsg = document.createElement('p');
+                errorMsg.className = 'text-red-400';
+                errorMsg.textContent = '부여된 퀘스트를 불러오는 중 오류가 발생했습니다.';
+                dailyQuestContainer.appendChild(errorMsg);
             }
             
-            // Render Completed Quests
+            // 2) 완료한 퀘스트 목록
             if (studentData.quests) {
-                const completedQuests = Object.entries(studentData.quests).filter(([key, value]) => value.completed_at);
+                const completedQuests = Object.entries(studentData.quests).filter(([_, v]) => v.completed_at);
                 if (completedQuests.length > 0) {
                     completedQuests.sort((a, b) => b[1].completed_at.toDate() - a[1].completed_at.toDate());
                     completedQuests.forEach(([key, value]) => {
                         const questCard = document.createElement('div');
                         questCard.className = 'bg-gray-700 rounded-lg p-3 shadow-sm';
-                        const questName = key === "daily_diary_quest" ? "오늘의 일기 쓰기" : key;
+                        const questName = key;
                         const date = value.completed_at.toDate().toLocaleDateString();
                         questCard.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <p class="text-gray-300 font-semibold">${questName}</p>
-                                <p class="text-sm text-emerald-400">완료</p>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-1">${date}에 완료됨</p>
+                        <div class="flex items-center justify-between">
+                        <p class="text-gray-300 font-semibold">${questName}</p>
+                        <p class="text-sm text-emerald-400">완료</p>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">${date}에 완료됨</p>
                         `;
                         completedQuestsContainer.appendChild(questCard);
                     });
@@ -1072,7 +1080,7 @@
                 completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
             }
         }
-
+        
         /**
          * Sets up a real-time listener for the growth log UI state.
          */
@@ -2279,4 +2287,5 @@
 </body>
 
 </html>
+
 
