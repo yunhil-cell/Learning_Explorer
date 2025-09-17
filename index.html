@@ -1052,12 +1052,20 @@
                                 const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                                 
                                 // 완료 기록 추가
-                                await updateDoc(studentRef, {
-                                    [`quests.${questId}`]: {
-                                        completed_at: serverTimestamp(),
-                                        description: qd.des치 ${rewards.exp || 0}, 다이아 ${rewards.dia || 0}, 성장포인트 ${rewards.growth || 0}</p>
-                            <p class="text-xs text-gray-400">완료일: ${date}</p>
-                            `;
+                               await updateDoc(studentRef, {
+                                   [`quests.${questId}`]: {
+                                       completed_at: serverTimestamp(),
+                                       description: qd.description || '',
+                                       rewards: {
+                                           exp: expReward,
+                                           dia: diaReward,
+                                           growth: growthReward
+                                       }
+                                   },
+                                   exp: increment(expReward),
+                                   diamonds: increment(diaReward),
+                                   growth_point: increment(growthReward)
+                               });
                             
                             // 토글 이벤트
                             header.querySelector('.toggle-detail').addEventListener('click', () => {
@@ -2296,6 +2304,7 @@
 </body>
 
 </html>
+
 
 
 
