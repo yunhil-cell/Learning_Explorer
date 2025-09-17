@@ -455,13 +455,22 @@
                                 <!-- 보상 -->
                                 <div>
                                     <label class="block text-gray-300 mb-1">보상</label>
-                                    <div class="flex space-x-2">
-                                        <input id="reward-exp" type="number" min="0" value="0" placeholder="경험치"
-                                            class="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
-                                        <input id="reward-dia" type="number" min="0" value="0" placeholder="다이아"
-                                            class="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
-                                        <input id="reward-growth" type="number" min="0" value="0" placeholder="성장 포인트"
-                                            class="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="w-24 text-gray-300">경험치:</span>
+                                            <input id="reward-exp" type="number" min="0" value="0"
+                                                class="w-1/2 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="w-24 text-gray-300">다이아:</span>
+                                            <input id="reward-dia" type="number" min="0" value="0"
+                                                class="w-1/2 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="w-24 text-gray-300">성장포인트:</span>
+                                            <input id="reward-growth" type="number" min="0" value="0"
+                                                class="w-1/2 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -2173,26 +2182,42 @@
         questTabManageBtn.addEventListener("click", () => switchQuestSubTab(questTabManageBtn, questManageSection));
         questTabHistoryBtn.addEventListener("click", () => switchQuestSubTab(questTabHistoryBtn, questHistorySection));
 
-        // 학생 목록 불러오기 → 체크박스 렌더링
+        // 퀘스트 관리 탭 클릭 시 학생 목록 불러오기
+        questTabManageBtn.addEventListener("click", () => {
+            switchQuestSubTab(questTabManageBtn, questManageSection);
+            renderQuestStudentList(); // ✅ 학생 목록 불러오기 실행
+        });
+        
+        // 학생 목록 불러오기 함수
         async function renderQuestStudentList() {
             const container = document.getElementById("quest-student-list");
             container.innerHTML = "<p class='text-gray-400'>불러오는 중...</p>";
             
-            const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
-            const snapshot = await getDocs(studentsRef);
-            
-            container.innerHTML = "";
-            snapshot.forEach(docSnap => {
-                const s = docSnap.data();
-                const div = document.createElement("div");
-                div.innerHTML = `
-                <label class="flex items-center space-x-2 text-gray-200">
-                <input type="checkbox" value="${docSnap.id}" class="quest-student-checkbox">
-                <span>${s.name} (${s.id || docSnap.id})</span>
-                </label>
-                `;
-                container.appendChild(div);
-            });
+            try {
+                const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+                const snapshot = await getDocs(studentsRef);
+                
+                container.innerHTML = "";
+                if (snapshot.empty) {
+                    container.innerHTML = "<p class='text-gray-400'>등록된 학생이 없습니다.</p>";
+                    return;
+                }
+                
+                snapshot.forEach(docSnap => {
+                    const s = docSnap.data();
+                    const div = document.createElement("div");
+                    div.innerHTML = `
+                    <label class="flex items-center space-x-2 text-gray-200">
+                    <input type="checkbox" value="${docSnap.id}" class="quest-student-checkbox">
+                    <span>${s.name} (${s.id || docSnap.id})</span>
+                    </label>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("학생 목록 불러오기 실패:", err);
+                container.innerHTML = "<p class='text-red-400'>학생 목록을 불러오는 중 오류가 발생했습니다.</p>";
+            }
         }
         
         // 전체 선택 버튼
@@ -2254,3 +2279,4 @@
 </body>
 
 </html>
+
