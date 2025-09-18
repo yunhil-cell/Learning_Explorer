@@ -892,7 +892,7 @@
             const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
             const q = query(logsCollectionRef,
                 where("student_id", "==", userId),
-                where("status", "in", ['approved', 'rejected']),
+                where("status", "in", ['best', 'confirmed']),
                 where("rewarded", "==", false)
             );
 
@@ -908,26 +908,19 @@
                         try {
                             const studentDocSnap = await getDoc(studentDocRef);
                             const studentData = studentDocSnap.data();
-
+                            
                             let expGain = 0;
-                            let growthPointGain = 0;
-
-                            if (logData.status === 'approved') {
-                                expGain = 30;
-                                growthPointGain = 1;
-                                showMessageModal('축하합니다!', `교사에게 성장일지 '최고' 점수를 받았습니다! 경험치 ${expGain}을 얻었습니다.`);
-                            } else if (logData.status === 'rejected') {
-                                expGain = 20;
-                                showMessageModal('확인됨', `교사가 성장일지를 확인했습니다. 경험치 ${expGain}을 얻었습니다.`);
+                            let diaGain = 0;
+                            if (logData.status === 'best') {
+                                expGain = 30; diaGain = 10;
+                                showMessageModal('축하합니다!', `성장일지 '최고'! 경험치 ${expGain}, 다이아 ${diaGain}을 받았습니다.`);
+                            } else if (logData.status === 'confirmed') {
+                                expGain = 20; diaGain = 10;
+                                showMessageModal('확인됨', `성장일지가 확인되었습니다. 경험치 ${expGain}, 다이아 ${diaGain}을 받았습니다.`);
                             }
 
                             const newExp = (studentData.exp || 0) + expGain;
-                            const newGrowthPoints = (studentData.growth_points || 0) + growthPointGain;
-                            
-                            await updateDoc(studentDocRef, {
-                                exp: newExp,
-                                growth_points: newGrowthPoints
-                            });
+                            await updateDoc(studentDocRef, { exp: newExp, diamonds: increment(diaGain) });
 
                             await updateDoc(logDocRef, { rewarded: true });
 
@@ -1368,7 +1361,7 @@
                     return;
                 }
 
-                await updateDoc(logDocRef, { status: 'approved' });
+                await updateDoc(logDocRef, { status: 'best' });
                 showMessageModal('승인 완료', '성장일지가 최고 점수를 받았습니다. 학생에게 보상이 지급될 예정입니다!');
             } catch (error) {
                 console.error("Growth log approval failed:", error);
@@ -1391,7 +1384,7 @@
                     return;
                 }
 
-                await updateDoc(logDocRef, { status: 'rejected' });
+                await updateDoc(logDocRef, { status: 'confirmed' });
                 showMessageModal('확인 완료', '성장일지가 확인되었습니다. 학생에게 보상이 지급될 예정입니다!');
             } catch (error) {
                 console.error("Growth log rejection failed:", error);
@@ -1928,9 +1921,9 @@
             
             if (approveBtn || checkBtn) {
                 const logId = (approveBtn || checkBtn).getAttribute('data-log-id');
-                const isApproved = !!approveBtn; // '최고' 버튼이면 true
-                const newStatus = isApproved ? 'approved' : 'rejected';
-                const evaluationText = isApproved ? '최고' : '확인';
+                const isBest = !!approveBtn; // '최고' 버튼이면 true
+                const newStatus = isBest ? 'best' : 'confirmed';
+                const evaluationText = isBest ? '최고' : '확인';
                 
                 try {
                     const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
@@ -1943,20 +1936,6 @@
                     const logSnap = await getDoc(logRef);
                     const studentId = logSnap.data().student_id;
                     const studentRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
-                    
-                    if (isApproved) {
-                        // 최고 → 경험치 +30, 다이아 +10
-                        await updateDoc(studentRef, {
-                            exp: increment(30),
-                            diamonds: increment(10)
-                        });
-                    } else {
-                        // 확인 → 경험치 +20, 다이아 +10
-                        await updateDoc(studentRef, {
-                            exp: increment(20),
-                            diamonds: increment(10)
-                        });
-                    }
                     
                     showMessageModal('평가 완료', `성장일지가 '${evaluationText}'(으)로 평가되었습니다.`);
                     
@@ -2299,6 +2278,7 @@
 </body>
 
 </html>
+
 
 
 
