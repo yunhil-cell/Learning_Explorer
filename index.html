@@ -1916,48 +1916,45 @@
         
         // 평가 버튼 클릭 이벤트 리스너 (미확인 탭과 전체 탭에서 모두 사용 가능)
         document.addEventListener('click', async (e) => {
-            const approveBtn = e.target.closest('.approve-btn');
-            const checkBtn = e.target.closest('.check-btn');
+            const btn = e.target.closest('.approve-btn, .check-btn');
+            if (!btn) return; // 다른 버튼 클릭이면 무시
             
-            if (approveBtn || checkBtn) {
-                const logId = (approveBtn || checkBtn).getAttribute('data-log-id');
-                const isBest = !!approveBtn; // '최고' 버튼이면 true
-                const newStatus = isBest ? 'best' : 'confirmed';
-                const evaluationText = isBest ? '최고' : '확인';
+            const logId = btn.getAttribute('data-log-id');
+            if (!logId) { // 회원가입 승인 버튼 등과 구분
+                console.warn('missing data-log-id on growth-log button');
+                showMessageModal('오류', '항목 ID를 찾지 못했습니다.');
+                return;
+            }
+            
+            const isBest = btn.classList.contains('approve-btn'); // '최고' 버튼이면 true
+            const newStatus = isBest ? 'best' : 'confirmed';
+            const evaluationText = isBest ? '최고' : '확인';
+            
+            try {
+                const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
+                await updateDoc(logRef, { status: newStatus, evaluation: evaluationText });
                 
-                try {
-                    const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
-                    await updateDoc(logRef, {
-                        status: newStatus,
-                        evaluation: evaluationText
-                    });
-                    
-                    // ✅ 보상 지급 로직 추가
-                    const logSnap = await getDoc(logRef);
-                    const studentId = logSnap.data().student_id;
-                    const studentRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
-                    
-                    showMessageModal('평가 완료', `성장일지가 '${evaluationText}'(으)로 평가되었습니다.`);
-                    
-                    // 평가 후 목록 새로고침
-                    renderUnverifiedLogs();
-                    if (!allLogsSection.classList.contains('hidden')) {
-                        const studentId = e.target.closest('[data-student-id]')?.getAttribute('data-student-id');
-                        const studentName = e.target.closest('[data-student-id]')?.textContent.split('(')[0].trim();
-                        if(studentId && studentName) {
-                            renderGrowthLogsWithEvaluation(studentId, studentName);
-                        }
+                showMessageModal('평가 완료', `성장일지가 '${evaluationText}'(으)로 평가되었습니다.`);
+                
+                // 목록 새로고침
+                renderUnverifiedLogs();
+                if (!allLogsSection.classList.contains('hidden')) {
+                    const holder = e.target.closest('[data-student-id]');
+                    const studentId = holder?.getAttribute('data-student-id');
+                    const studentName = holder?.textContent.split('(')[0].trim();
+                    if (studentId && studentName) {
+                        renderGrowthLogsWithEvaluation(studentId, studentName);
                     }
-                } catch (error) {
-                    console.error("평가 업데이트 실패:", error);
-                    showMessageModal('오류', '성장일지 평가 중 오류가 발생했습니다.');
                 }
+            } catch (error) {
+                console.error('평가 업데이트 실패:', error);
+                showMessageModal('오류', '성장일지 평가 중 오류가 발생했습니다.');
             }
         });
         
         // 초기 로딩 시 미확인 성장일지 탭 활성화
         unverifiedLogsTabBtn.click();
-
+        
         // 성장일지 관리 탭 진입 시 학생 목록 렌더링
         // (탭 전환 로직에 이 함수를 호출하는 코드를 추가해야 함)
         // 예: showView('teacherDashboard', 'growth-log-management-tab');
@@ -2278,6 +2275,7 @@
 </body>
 
 </html>
+
 
 
 
