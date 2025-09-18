@@ -883,58 +883,68 @@
             }
         }
         
+        // 전역에 한 번 선언 (파일 상단 쪽)
+        let unsubscribeGrowthReward = null;
+        
         /**
-         * Listens for growth log approvals and applies rewards.
-         */
+        * Listens for growth log approvals and applies rewards (single-run + transaction).
+        */
         function listenForRewards() {
             if (!userId) return;
-
+            
+            // 이미 구독 중이면 재등록 금지
+            if (typeof unsubscribeGrowthReward === 'function') return;
+            
             const logsCollectionRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
-            const q = query(logsCollectionRef,
+            const q = query(
+                logsCollectionRef,
                 where("student_id", "==", userId),
-                where("status", "in", ['best', 'confirmed']),
+                where("status", "in", ["best", "confirmed"]),
                 where("rewarded", "==", false)
             );
-
-            onSnapshot(q, async (querySnapshot) => {
+            
+            unsubscribeGrowthReward = onSnapshot(q, (querySnapshot) => {
                 if (!isAuthReady) return;
-
-                if (!querySnapshot.empty) {
-                    for (const docSnap of querySnapshot.docs) {
-                        const logData = docSnap.data();
-                        const logDocRef = docSnap.ref;
-                        const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
-
-                        try {
-                            const studentDocSnap = await getDoc(studentDocRef);
-                            const studentData = studentDocSnap.data();
-                            
-                            let expGain = 0;
-                            let diaGain = 0;
-                            if (logData.status === 'best') {
-                                expGain = 30; diaGain = 10;
-                                showMessageModal('축하합니다!', `성장일지 '최고'! 경험치 ${expGain}, 다이아 ${diaGain}을 받았습니다.`);
-                            } else if (logData.status === 'confirmed') {
-                                expGain = 20; diaGain = 10;
-                                showMessageModal('확인됨', `성장일지가 확인되었습니다. 경험치 ${expGain}, 다이아 ${diaGain}을 받았습니다.`);
-                            }
-
-                            const newExp = (studentData.exp || 0) + expGain;
-                            await updateDoc(studentDocRef, { exp: newExp, diamonds: increment(diaGain) });
-
-                            await updateDoc(logDocRef, { rewarded: true });
-
-                            logEvent(userId, `growth_log_reward_${logData.status}`, {
-                                logId: docSnap.id,
-                                exp_gain: expGain,
-                                growth_point_gain: growthPointGain
-                            });
-
-                        } catch (error) {
-                            console.error("Failed to apply reward:", error);
+                
+                querySnapshot.docChanges().forEach((chg) => {
+                    if (chg.type !== "added" && chg.type !== "modified") return;
+                    
+                    const logRef = chg.doc.ref;
+                    const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+                    
+                    // ▶ 트랜잭션: 아직 rewarded=false일 때만 1회 지급 + 즉시 rewarded=true
+                    runTransaction(db, async (tx) => {
+                        const freshLog = await tx.get(logRef);
+                        if (!freshLog.exists()) return;
+                        
+                        const d = freshLog.data();
+                        if (d.rewarded === true) return; // 이미 지급됨 → 아무 것도 안 함
+                        
+                        const status = d.status;
+                        const expGain = status === "best" ? 30 : 20;
+                        const diaGain = 10;
+                        
+                        tx.update(studentRef, {
+                            exp: increment(expGain),
+                            diamonds: increment(diaGain),
+                        });
+                        tx.update(logRef, {
+                            rewarded: true,
+                            rewardedAt: serverTimestamp(),
+                        });
+                    }).then(() => {
+                        const s = chg.doc.data().status;
+                        if (s === "best") {
+                            showMessageModal("축하합니다!", "성장일지 '최고' 보상으로\n 경험치 30, 다이아 10을 받았습니다.");
+                        } else if (s === "confirmed") {
+                            showMessageModal("확인됨", "성장일지 '확인' 보상으로\n 경험치 20, 다이아 10을 받았습니다.");
                         }
-                    }
-                }
+                    }).catch((err) => {
+                        console.error("Failed to apply reward (tx):", err);
+                    });
+                });
+            }, (err) => {
+                console.error("growth reward listener error:", err);
             });
         }
 
@@ -1771,43 +1781,66 @@
         const growthLogContainer = document.getElementById('teacher-growth-log-container');
         const selectedStudentName = document.getElementById('selected-student-name');
         const growthLogList = document.getElementById('growth-log-list');
+
+        // ----- 미확인 성장일지 실시간 구독 -----
+        let unsubscribePending = null;
         
         // 미확인 성장일지 불러오기 및 렌더링
         async function renderUnverifiedLogs() {
             try {
+                if (!unverifiedLogList) return;
                 unverifiedLogList.innerHTML = '<p class="text-gray-400">불러오는 중...</p>';
+                
                 const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
+                const q = query(
+                    logsRef,
+                    where("status", "==", "pending"),
+                    orderBy("timestamp", "desc") // 인덱스 에러 나면 이 줄만 잠시 제거
+                    );
                 
-                // 쿼리 수정: rewarded 대신 status 필드를 사용합니다.
-                const q = query(logsRef, where("status", "==", "pending"), orderBy("timestamp", "desc"));
-                
-                const querySnapshot = await getDocs(q);
-        
-                unverifiedLogList.innerHTML = '';
-                if (querySnapshot.empty) {
-                    unverifiedLogList.innerHTML = '<p class="text-gray-400">미확인된 성장일지가 없습니다.</p>';
-                } else {
-                    querySnapshot.forEach(doc => {
-                        const logData = doc.data();
-                        const logDate = logData.timestamp ? logData.timestamp.toDate().toLocaleDateString('ko-KR') : '날짜 없음';
-                        const logElement = document.createElement('div');
-                        logElement.classList.add('bg-gray-900', 'p-4', 'rounded-lg', 'shadow-inner', 'mb-2', 'relative');
-                        logElement.innerHTML = `
-                            <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
-                            <p class="text-white mb-2">${logData.content}</p>
-                            <div class="mt-4 flex gap-2">
-                                <button class="btn-primary text-sm px-3 py-1 rounded-full approve-btn" data-log-id="${doc.id}">최고</button>
-                                <button class="btn-secondary text-sm px-3 py-1 rounded-full check-btn" data-log-id="${doc.id}">확인</button>
-                            </div>
-                        `;
-                        unverifiedLogList.appendChild(logElement);
-                    });
+                // 이전 구독이 있으면 해제(중복 방지)
+                if (typeof unsubscribePending === 'function') {
+                    unsubscribePending();
+                    unsubscribePending = null;
                 }
+                
+                // 실시간 구독으로 즉시/자동 반영
+                unsubscribePending = onSnapshot(q, (querySnapshot) => {
+                    unverifiedLogList.innerHTML = '';
+                    if (querySnapshot.empty) {
+                        unverifiedLogList.innerHTML = '<p class="text-gray-400">미확인된 성장일지가 없습니다.</p>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((docSnap) => {
+                        const logData = docSnap.data();
+                        const logDate = logData.timestamp?.toDate
+                            ? logData.timestamp.toDate().toLocaleDateString('ko-KR')
+                            : '날짜 없음';
+                        
+                        const el = document.createElement('div');
+                        el.classList.add('bg-gray-900','p-4','rounded-lg','shadow-inner','mb-2','relative');
+                        el.innerHTML = `
+                        <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
+                        <p class="text-white mb-2">${(logData.content || '').replace(/\n/g,'<br>')}</p>
+                        <div class="mt-4 flex gap-2">
+                        <button class="btn-primary text-sm px-3 py-1 rounded-full approve-btn" data-log-id="${docSnap.id}">최고</button>
+                        <button class="btn-secondary text-sm px-3 py-1 rounded-full check-btn" data-log-id="${docSnap.id}">확인</button>
+                        </div>
+                        `;
+                        unverifiedLogList.appendChild(el);
+                    });
+                }, (error) => {
+                    console.error("미확인 성장일지 구독 실패:", error);
+                    unverifiedLogList.innerHTML = '<p class="text-red-400">목록을 불러오지 못했습니다.</p>';
+                });
+                
             } catch (error) {
                 console.error("미확인 성장일지 불러오기 실패:", error);
                 showMessageModal('오류', '미확인 성장일지를 불러오는 데 실패했습니다.');
             }
         }
+        
         
         // 전체 성장일지 (학생 목록) 불러오기
         async function renderStudentList() {
@@ -1919,19 +1952,15 @@
             }
         });
         
-        // 평가 버튼 클릭 이벤트 리스너 (미확인 탭과 전체 탭에서 모두 사용 가능)
+        // 평가 버튼 클릭 이벤트 리스너 (미확인 탭과 전체 탭에서 모두 사용)
         document.addEventListener('click', async (e) => {
             const btn = e.target.closest('.approve-btn, .check-btn');
-            if (!btn) return; // 다른 버튼 클릭이면 무시
+            if (!btn) return;
             
             const logId = btn.getAttribute('data-log-id');
-            if (!logId) { // 회원가입 승인 버튼 등과 구분
-                console.warn('missing data-log-id on growth-log button');
-                showMessageModal('오류', '항목 ID를 찾지 못했습니다.');
-                return;
-            }
+            if (!logId) return;
             
-            const isBest = btn.classList.contains('approve-btn'); // '최고' 버튼이면 true
+            const isBest = btn.classList.contains('approve-btn'); // '최고' 버튼
             const newStatus = isBest ? 'best' : 'confirmed';
             const evaluationText = isBest ? '최고' : '확인';
             
@@ -1947,15 +1976,14 @@
                     const holder = e.target.closest('[data-student-id]');
                     const studentId = holder?.getAttribute('data-student-id');
                     const studentName = holder?.textContent.split('(')[0].trim();
-                    if (studentId && studentName) {
-                        renderGrowthLogsWithEvaluation(studentId, studentName);
-                    }
+                    if (studentId && studentName) await renderGrowthLogsWithEvaluation(studentId, studentName);
                 }
             } catch (error) {
-                console.error('평가 업데이트 실패:', error);
+                console.error("평가 업데이트 실패:", error);
                 showMessageModal('오류', '성장일지 평가 중 오류가 발생했습니다.');
             }
         });
+
         
         // 초기 로딩 시 미확인 성장일지 탭 활성화
         unverifiedLogsTabBtn.click();
@@ -1964,12 +1992,12 @@
         // (탭 전환 로직에 이 함수를 호출하는 코드를 추가해야 함)
         // 예: showView('teacherDashboard', 'growth-log-management-tab');
         document.addEventListener('DOMContentLoaded', renderStudentList);
-
+        
         const studentList = document.getElementById('student-list');
         if (studentList) {
             studentList.addEventListener('click', handleStudentListClick);
         }
-
+        
         // 새 탭 요소
         const teacherTabStudentsBtn = document.getElementById('teacher-tab-students');
         const teacherStudentsSection = document.getElementById('teacher-students-section');
@@ -2280,6 +2308,7 @@
 </body>
 
 </html>
+
 
 
 
