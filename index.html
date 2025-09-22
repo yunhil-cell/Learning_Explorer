@@ -1997,13 +1997,18 @@
             const logId = btn.getAttribute('data-log-id');
             if (!logId) return;
             
-            const isBest = btn.classList.contains('approve-btn'); // '최고' 버튼
-            const newStatus = isBest ? 'best' : 'confirmed';
-            const evaluationText = isBest ? '최고' : '확인';
+                const isBest = !!approveBtn; // '최고' 버튼이면 true
+                const newStatus = isBest ? 'best' : 'confirmed';
+                const evaluationText = isBest ? '최고' : '확인';
             
             try {
                 const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
-                await updateDoc(logRef, { status: newStatus, evaluation: evaluationText });
+                    // 교사 평가는 상태만 기록하고 보상은 리스너에서 트랜잭션으로 처리
+                    await updateDoc(logRef, {
+                        status: newStatus,
+                        evaluation: evaluationText,
+                        rewarded: false
+                    });
                 
                 showMessageModal('평가 완료', `성장일지가 '${evaluationText}'(으)로 평가되었습니다.`);
                 
@@ -2345,6 +2350,7 @@
 </body>
 
 </html>
+
 
 
 
