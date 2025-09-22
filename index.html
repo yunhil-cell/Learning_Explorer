@@ -658,8 +658,9 @@
         const teacherPendingStudentsSection = document.getElementById('teacher-pending-students-section');
         const teacherPendingLogsSection = document.getElementById('teacher-pending-logs-section');
 
-        // Initial stat values for new students
-        const initialStats = {
+        // ---- 스키마 및 초기값 정의 ----
+        const STUDENT_DEFAULTS = {
+            role: "student",
             level: 1,
             exp: 0,
             diamonds: 0,
@@ -676,9 +677,49 @@
                 accessory: "없음",
                 relic: "없음",
                 skill: "없음"
-            }
+            },
+            inventory: [],
+            quests: {},
+            createdAt: null,        // serverTimestamp()로 설정
+            approvedBy: null        // 승인 시 설정
         };
-
+        
+        // 누락 필드 보강 유틸
+        function withStudentDefaults(input) {
+            const out = structuredClone(STUDENT_DEFAULTS);
+            // 얕은 병합 + 중첩 키 보강
+            const deepMerge = (t, s) => {
+                for (const k of Object.keys(s)) {
+                    if (s[k] && typeof s[k] === "object" && !Array.isArray(s[k])) {
+                        if (!t[k] || typeof t[k] !== "object") t[k] = {};
+                        deepMerge(t[k], s[k]);
+                    } else if (s[k] !== undefined) {
+                        t[k] = s[k];
+                    }
+                }
+            };
+            deepMerge(out, input || {});
+            return out;
+        }
+        
+        // 교사용: 전체 학생 문서 마이그레이션(누락 필드 채우기)
+        async function migrateStudentsDefaults() {
+            const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
+            const snap = await getDocs(studentsRef);
+            let fixed = 0;
+            for (const d of snap.docs) {
+                const cur = d.data();
+                const next = withStudentDefaults(cur);
+                // createdAt은 서버 타임스탬프로만 보정
+                if (!cur.createdAt) next.createdAt = serverTimestamp();
+                if (JSON.stringify(cur) !== JSON.stringify(next)) {
+                    await updateDoc(d.ref, next);
+                    fixed++;
+                }
+            }
+            showMessageModal('마이그레이션 완료', `보강된 문서: ${fixed}건`);
+        }
+        
         // --- Core Functions ---
 
         /**
@@ -1488,21 +1529,31 @@
                 const studentData = registerDocSnap.data();
                 
                 if (action === 'approve') {
-                    // register 문서에 저장된 학생 입력 아이디를 문서 ID로 사용
-                    const studentIdFromForm = studentData.id; // 예: "s2025_01_01"
-
-                    // students/{학생아이디} 형태로 문서 생성
-                    const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentIdFromForm);
-
-                    await setDoc(studentsDocRef, {
-                        ...studentData,
-                        ...initialStats,
-                        approvedBy: userId,
-                        createdAt: serverTimestamp()
-                    });
+                    const studentId = String(studentData.id);
+                    const studentsDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
                     
-                    // ✅ register 문서 삭제 (status 업데이트 대신)
-                    await deleteDoc(registerDocRef);
+                    await runTransaction(db, async (tx) => {
+                        const existing = await tx.get(studentsDocRef);
+                        if (existing.exists()) {
+                            throw new Error('이미 동일 ID의 학생이 존재합니다.');
+                        }
+                        // 규격화 + 기본값 보강
+                        const base = {
+                            id: studentId,
+                            name: studentData.name ?? '',
+                            grade: Number(studentData.grade ?? 0),
+                            class: Number(studentData.class ?? 0),
+                            number: Number(studentData.number ?? 0),
+                            character_name: studentData.character_name ?? ''
+                        };
+                        const toWrite = withStudentDefaults(base);
+                        toWrite.createdAt = serverTimestamp();
+                        toWrite.approvedBy = userId ?? null;
+                        // students 생성
+                        tx.set(studentsDocRef, toWrite, { merge: false });
+                        // register 삭제
+                        tx.delete(registerDocRef);
+                    });
                     
                     showMessageModal('승인 완료', `${studentData.name} 학생이 성공적으로 승인되었습니다!`);
                 } else if (action === 'reject') {
@@ -1754,7 +1805,6 @@
                     number: number,
                     character_name: charName,
                     status: '대기중',
-                    quests: {},
                     createdAt: serverTimestamp()
                 });
 
@@ -2350,6 +2400,7 @@
 </body>
 
 </html>
+
 
 
 
