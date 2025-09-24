@@ -35,6 +35,11 @@
         background: #0b1020;
         color: #e6e9f5;
       }
+
+      /* 폼/버튼/링크(버튼 스타일)에도 동일 폰트를 강제 */
+      button, input, select, textarea, a.btn {
+        font-family: 'DnfTemperedBlade';
+      }
       :root {
         --maxw: 1080px;
         --surface: #11162b;
@@ -159,7 +164,7 @@
                 아이디
                 <div class="inline-field">
                   <input type="text" name="id" required>
-                  <button class="btn btn-register btn-small" type="button" id="btn-check-id">중복확인</button>
+                  <button class="btn btn-register btn-small" type="button" id="btn-check-id">중복 확인</button>
                 </div>
               </label>
 
@@ -169,7 +174,7 @@
                 캐릭터명
                 <div class="inline-field">
                   <input type="text" name="character_name" required>
-                  <button class="btn btn-register btn-small" type="button" id="btn-check-character">중복확인</button>
+                  <button class="btn btn-register btn-small" type="button" id="btn-check-character">중복 확인</button>
                 </div>
               </label>
 
@@ -331,7 +336,7 @@
             number: Number(raw.number),
             name: raw.name?.trim(),
             id: raw.id?.trim(),
-            password: raw.password,            // 개인 용도이므로 해시 생략
+            password: raw.password,               // 개인용: 해시 생략
             character_name: raw.character_name?.trim(),
           };
 
@@ -343,11 +348,11 @@
           if (dupId) { toast('이미 사용 중인 아이디입니다.'); return; }
           if (dupChar) { toast('이미 사용 중인 캐릭터명입니다.'); return; }
 
-          // 문서 ID = name + createdAt(동일 값) 규칙
+          // 문서 ID = name + createdAt(동일 문자열) 규칙 + 안전한 이름 정규화
           const createdAt = new Date().toISOString(); // 예: 2025-09-24T10:12:34.567Z
           const safeName = (data.name || '')
-            .replace(/[\/\s]+/g, '_')   // 공백/슬래시 정규화
-            .replace(/^_+|_+$/g, '');   // 앞뒤 언더스코어 제거
+            .replace(/[\/\s]+/g, '_')   // 공백/슬래시 -> _
+            .replace(/^_+|_+$/g, '');   // 앞뒤 _ 제거
           const docId = `${safeName}_${createdAt}`;
 
           try {
@@ -360,8 +365,8 @@
               id: data.id,
               password: data.password,
               character_name: data.character_name,
-              createdAt,                  // 문서 ID에 사용한 것과 동일 문자열
-              createdAtServer: serverTimestamp() // 참고용 서버 타임스탬프
+              createdAt,                   // 문서 ID에 사용한 값과 동일(문자열)
+              createdAtServer: serverTimestamp(), // 참고용 서버 타임스탬프
             });
             toast('회원가입 성공');
             form.reset();
