@@ -1000,7 +1000,10 @@
         * Renders assigned quests (with complete button) and completed quests (accordion + 3 at a time "더보기").
         * @param {Object} studentData - The student's data from Firestore.
         */
+        // ✅ 동시 렌더 방지용 전역 시퀀스
+        window.__questRenderSeq = (window.__questRenderSeq || 0);
         async function renderQuest(studentData) {
+            const mySeq = ++window.__questRenderSeq;
             const dailyQuestContainer = document.getElementById('daily-quest-container');
             const completedQuestsContainer = document.getElementById('completed-quests-container');
             
@@ -1013,6 +1016,8 @@
             try {
                 const qAssigned = query(questsRef, where("assigned_students", "array-contains", userId));
                 const assignedSnap = await getDocs(qAssigned);
+                // ✅ 더 새로운 렌더가 시작되었으면 즉시 중단
+                if (mySeq !== window.__questRenderSeq) return;
                 
                 if (assignedSnap.empty) {
                     const noAssigned = document.createElement('p');
@@ -1046,6 +1051,9 @@
                             
                             // 완료 버튼 이벤트
                             card.querySelector('.complete-quest-btn').addEventListener('click', async () => {
+                                const btnEl = card.querySelector('.complete-quest-btn');
+                                btnEl.disabled = true; btnEl.textContent = '처리 중...';
+                                if (mySeq !== window.__questRenderSeq) return;
                                 const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                                 
                                 await updateDoc(studentRef, {
@@ -1060,8 +1068,8 @@
                                 });
                                 
                                 showMessageModal('완료', `${qd.name || '퀘스트'}를 완료했습니다!`);
-                                const updated = await getDoc(studentRef);
-                                renderQuest(updated.data());
+                                // ✅ 화면 갱신은 학생 onSnapshot에서 자동 반영됨
+                                btnEl.disabled = false; btnEl.textContent = '퀘스트 완료';
                             });
                         }
                     });
@@ -1087,6 +1095,9 @@
             let visibleCount = 3;
             async function renderCompleted(list, count) {
                 completedQuestsContainer.innerHTML = '';
+                // ✅ 더 새로운 렌더가 시작되었으면 이 렌더 중단
+                const localSeq = mySeq;
+                const stillMine = () => localSeq === window.__questRenderSeq;
                 
                 // 화면에 보여줄 범위의 완료 퀘스트만 선택
                 const slice = list.slice(0, count);
@@ -1097,6 +1108,7 @@
                     try {
                         const questRef = doc(db, `artifacts/${appId}/public/data/quests`, qid);
                         const questSnap = await getDoc(questRef);
+                        if (!stillMine()) return;
                         if (questSnap.exists()) {
                             const qd = questSnap.data();
                             questName = qd?.name || qid;
@@ -1125,6 +1137,7 @@
                     <p class="mb-1">보상: 경험치 ${rewards.exp || 0}, 다이아 ${rewards.dia || 0}, 성장포인트 ${rewards.growth || 0}</p>
                     <p class="text-xs text-gray-400">완료일: ${date}</p>
                     `;
+                    if (!stillMine()) return;
                     
                     header.querySelector('.toggle-detail').addEventListener('click', () => {
                         detail.classList.toggle('hidden');
