@@ -1997,7 +1997,7 @@
             const logId = btn.getAttribute('data-log-id');
             if (!logId) return;
             
-                const isBest = !!approveBtn; // '최고' 버튼이면 true
+                const isBest = btn.classList.contains('approve-btn'); // '최고' 버튼인지 확인
                 const newStatus = isBest ? 'best' : 'confirmed';
                 const evaluationText = isBest ? '최고' : '확인';
             
