@@ -68,11 +68,14 @@
             <div id="landing-view" class="view hidden">
                 <div class="space-y-4">
                     <button id="show-student-login-btn"
-                        class="w-full p-4 rounded-lg text-white font-semibold shadow-md btn-primary text-lg">학생 로그인</button>
+                        class="w-full p-4 rounded-lg text-white font-semibold shadow-md btn-primary text-lg">학생
+                        로그인</button>
                     <button id="show-register-btn"
-                        class="w-full p-4 rounded-lg text-white font-semibold shadow-md btn-secondary text-lg">학생 회원가입</button>
+                        class="w-full p-4 rounded-lg text-white font-semibold shadow-md btn-secondary text-lg">학생
+                        회원가입</button>
                     <button id="show-teacher-login-btn"
-                        class="w-full p-4 rounded-lg text-white font-semibold border-2 border-gray-600 hover:bg-gray-700 transition-colors text-lg">교사 로그인</button>
+                        class="w-full p-4 rounded-lg text-white font-semibold border-2 border-gray-600 hover:bg-gray-700 transition-colors text-lg">교사
+                        로그인</button>
                 </div>
             </div>
 
@@ -260,9 +263,11 @@
                                     class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-400 text-white"
                                     placeholder="오늘 배운 점이나 느낀 점을 기록해 보세요."></textarea>
                                 <button type="submit"
-                                    class="w-full p-3 rounded-lg text-white font-semibold shadow-md btn-primary">기록 전송</button>
+                                    class="w-full p-3 rounded-lg text-white font-semibold shadow-md btn-primary">기록
+                                    전송</button>
                             </form>
-                            <div id="growth-log-status" class="mt-4 p-4 rounded-lg text-center font-semibold hidden"></div>
+                            <div id="growth-log-status" class="mt-4 p-4 rounded-lg text-center font-semibold hidden">
+                            </div>
                         </div>
 
                         <div class="bg-gray-800 rounded-2xl p-6 shadow-md">
@@ -297,7 +302,8 @@
                     <h2 class="text-2xl font-semibold">교사 대시보드</h2>
                     <div class="flex space-x-2">
                         <button id="change-teacher-code-btn"
-                            class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-yellow-500 hover:text-white transition-colors text-sm">로그인 코드 변경</button>
+                            class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-yellow-500 hover:text-white transition-colors text-sm">로그인
+                            코드 변경</button>
                         <button id="teacher-logout-btn"
                             class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-500 hover:text-white transition-colors text-sm">로그아웃</button>
                     </div>
@@ -305,13 +311,17 @@
                 <!-- Tabs -->
                 <div class="flex justify-start gap-2 mb-6 text-sm md:text-base">
                     <button id="teacher-tab-pending-students"
-                        class="px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">회원가입 관리</button>
-                    <button id="teacherTabGrowthLogBtn" 
-                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">성장일지 관리</button>
+                        class="px-4 py-2 text-center border-b-2 font-semibold border-emerald-400 text-emerald-400">회원가입
+                        관리</button>
+                    <button id="teacherTabGrowthLogBtn"
+                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">성장일지
+                        관리</button>
                     <button id="teacher-tab-students"
-                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">학생 정보 확인</button>
+                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">학생
+                        정보 확인</button>
                     <button id="teacher-tab-quest"
-                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">퀘스트 관리</button>
+                        class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white hover:border-white transition-colors">퀘스트
+                        관리</button>
 
                 </div>
 
@@ -323,32 +333,35 @@
                             <!-- Pending student list will be rendered here dynamically -->
                             <p class="text-gray-400 text-center" id="no-pending-students">미승인 학생이 없습니다.</p>
                         </div>
-                    </div>                    
+                    </div>
                     <div id="growth-log-management-tab" class="hidden p-4">
-                        <h3 class="text-xl font-bold mb-4 text-green-300">성장일지 관리</h3>                        
+                        <h3 class="text-xl font-bold mb-4 text-green-300">성장일지 관리</h3>
                         <div class="flex mb-4 border-b border-gray-700">
-                            <button id="unverified-logs-tab-btn" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+                            <button id="unverified-logs-tab-btn"
+                                class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
                                 미확인 성장일지
                             </button>
-                            <button id="all-logs-tab-btn" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+                            <button id="all-logs-tab-btn"
+                                class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
                                 전체 성장일지
                             </button>
-                        </div>                        
+                        </div>
                         <div id="unverified-logs-section" class="p-4 bg-gray-800 rounded-lg shadow-inner">
                             <div id="unverified-log-list">
                             </div>
-                        </div>                        
+                        </div>
                         <div id="all-logs-section" class="hidden">
                             <div id="student-list-container" class="mb-6">
                                 <h4 class="text-lg font-semibold mb-2">학생 목록</h4>
                                 <div id="student-list" class="flex flex-wrap gap-2">
                                 </div>
                             </div>
-                            <div id="teacher-growth-log-container" class="bg-gray-800 p-4 rounded-lg shadow-inner hidden">
+                            <div id="teacher-growth-log-container"
+                                class="bg-gray-800 p-4 rounded-lg shadow-inner hidden">
                                 <h4 class="text-lg font-semibold mb-2" id="selected-student-name"></h4>
-                                <div id="growth-log-list">                                    
+                                <div id="growth-log-list">
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
                     </div>
                     <div id="teacher-students-section" class="hidden">
@@ -356,85 +369,109 @@
                         <div id="students-overview-list" class="space-y-2">
                         </div>
                     </div>
-                    <div id="student-detail-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
+                    <div id="student-detail-modal"
+                        class="hidden fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
                         <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-md">
                             <h3 id="student-detail-name" class="text-xl font-bold text-white mb-4"></h3>
-                            
+
                             <!-- 기본 정보 -->
                             <div class="space-y-2 text-gray-200">
                                 <div class="flex justify-between"><span>레벨</span><span id="detail-level"></span></div>
                                 <div class="flex justify-between"><span>경험치</span><span id="detail-exp"></span></div>
-                                <div class="flex justify-between"><span>다이아</span><span id="detail-diamonds"></span></div>
+                                <div class="flex justify-between"><span>다이아</span><span id="detail-diamonds"></span>
+                                </div>
                             </div>
-                            
+
                             <!-- 능력치 -->
                             <div class="mt-4">
                                 <h4 class="text-lg font-semibold mb-2 text-white">능력치</h4>
                                 <div id="student-detail-stats" class="space-y-2"></div>
                             </div>
-                            
+
                             <!-- 액션 버튼 -->
                             <div class="mt-6 flex flex-col gap-2">
-                                <button id="give-exp-btn" class="w-full px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">경험치 지급</button>
+                                <button id="give-exp-btn"
+                                    class="w-full px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">경험치
+                                    지급</button>
                                 <div id="exp-give-section" class="hidden p-3 bg-gray-700 rounded">
                                     <div class="flex items-center space-x-2 mb-3">
                                         <button id="exp-minus" class="px-2 py-1 bg-gray-600 rounded">-</button>
-                                        <input id="exp-amount" type="number" value="10" min="1" class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
+                                        <input id="exp-amount" type="number" value="10" min="1"
+                                            class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
                                         <button id="exp-plus" class="px-2 py-1 bg-gray-600 rounded">+</button>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <button id="exp-confirm" class="flex-1 bg-blue-500 text-white px-3 py-1 rounded">지급</button>
-                                        <button id="exp-cancel" class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
+                                        <button id="exp-confirm"
+                                            class="flex-1 bg-blue-500 text-white px-3 py-1 rounded">지급</button>
+                                        <button id="exp-cancel"
+                                            class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
                                     </div>
                                 </div>
-                                
-                                <button id="give-dia-btn" class="w-full px-4 py-2 rounded bg-purple-500 text-white font-semibold hover:bg-purple-600">다이아 지급</button>
+
+                                <button id="give-dia-btn"
+                                    class="w-full px-4 py-2 rounded bg-purple-500 text-white font-semibold hover:bg-purple-600">다이아
+                                    지급</button>
                                 <div id="dia-give-section" class="hidden p-3 bg-gray-700 rounded">
                                     <div class="flex items-center space-x-2 mb-3">
                                         <button id="dia-minus" class="px-2 py-1 bg-gray-600 rounded">-</button>
-                                        <input id="dia-amount" type="number" value="5" min="1" class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
+                                        <input id="dia-amount" type="number" value="5" min="1"
+                                            class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
                                         <button id="dia-plus" class="px-2 py-1 bg-gray-600 rounded">+</button>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <button id="dia-confirm" class="flex-1 bg-purple-500 text-white px-3 py-1 rounded">지급</button>
-                                        <button id="dia-cancel" class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
+                                        <button id="dia-confirm"
+                                            class="flex-1 bg-purple-500 text-white px-3 py-1 rounded">지급</button>
+                                        <button id="dia-cancel"
+                                            class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
                                     </div>
                                 </div>
-                                
-                                <button id="give-growth-btn" class="w-full px-4 py-2 rounded bg-green-500 text-white font-semibold hover:bg-green-600">성장 포인트 지급</button>
+
+                                <button id="give-growth-btn"
+                                    class="w-full px-4 py-2 rounded bg-green-500 text-white font-semibold hover:bg-green-600">성장
+                                    포인트 지급</button>
                                 <div id="growth-give-section" class="hidden p-3 bg-gray-700 rounded">
                                     <div class="flex items-center space-x-2 mb-3">
                                         <button id="growth-minus" class="px-2 py-1 bg-gray-600 rounded">-</button>
-                                        <input id="growth-amount" type="number" value="3" min="1" class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
+                                        <input id="growth-amount" type="number" value="3" min="1"
+                                            class="w-20 text-center bg-gray-800 text-white rounded border border-gray-600">
                                         <button id="growth-plus" class="px-2 py-1 bg-gray-600 rounded">+</button>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <button id="growth-confirm" class="flex-1 bg-green-500 text-white px-3 py-1 rounded">지급</button>
-                                        <button id="growth-cancel" class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
+                                        <button id="growth-confirm"
+                                            class="flex-1 bg-green-500 text-white px-3 py-1 rounded">지급</button>
+                                        <button id="growth-cancel"
+                                            class="flex-1 bg-red-500 text-white px-3 py-1 rounded">취소</button>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- 닫기 -->
-                            <button id="close-student-detail" class="mt-6 w-full px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">닫기</button>
+                            <button id="close-student-detail"
+                                class="mt-6 w-full px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">닫기</button>
                         </div>
                     </div>
                     <!-- 퀘스트 관리 탭 전체 -->
                     <div id="teacher-quest-section" class="hidden">
                         <h3 class="text-xl font-bold mb-4 text-yellow-300">퀘스트 관리</h3>
-                        
+
                         <!-- 서브탭 버튼 -->
                         <div class="flex mb-4 space-x-2">
-                            <button id="quest-tab-list" class="px-4 py-2 text-sm font-medium border-b-2 border-yellow-400 text-yellow-400">퀘스트 목록</button>
-                            <button id="quest-tab-manage" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white hover:border-white">퀘스트 등록</button>
-                            <button id="quest-tab-history" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white hover:border-white">퀘스트 기록</button>
+                            <button id="quest-tab-list"
+                                class="px-4 py-2 text-sm font-medium border-b-2 border-yellow-400 text-yellow-400">퀘스트
+                                목록</button>
+                            <button id="quest-tab-manage"
+                                class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white hover:border-white">퀘스트
+                                등록</button>
+                            <button id="quest-tab-history"
+                                class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white hover:border-white">퀘스트
+                                기록</button>
                         </div>
-                        
+
                         <!-- 서브탭 콘텐츠 -->
                         <div id="quest-list-section">
                             <p class="text-gray-400">진행 중인 퀘스트 목록이 여기에 표시됩니다.</p>
                         </div>
-                        
+
                         <div id="quest-manage-section" class="hidden">
                             <h4 class="text-lg font-semibold mb-4">신규 퀘스트 등록</h4>
                             <form id="quest-form" class="space-y-4 bg-gray-800 p-4 rounded-lg">
@@ -444,14 +481,14 @@
                                     <input id="quest-name" type="text" required
                                         class="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600">
                                 </div>
-                                
+
                                 <!-- 퀘스트 설명 -->
                                 <div>
                                     <label class="block text-gray-300 mb-1">퀘스트 설명</label>
                                     <textarea id="quest-desc" rows="3" required
                                         class="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600"></textarea>
                                 </div>
-                                
+
                                 <!-- 보상 -->
                                 <div>
                                     <label class="block text-gray-300 mb-1">보상</label>
@@ -473,17 +510,19 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- 학생 선택 -->
                                 <div>
                                     <label class="block text-gray-300 mb-1">부여할 학생</label>
-                                    <div id="quest-student-list" class="space-y-1 max-h-40 overflow-y-auto bg-gray-700 p-2 rounded">
+                                    <div id="quest-student-list"
+                                        class="space-y-1 max-h-40 overflow-y-auto bg-gray-700 p-2 rounded">
                                         <!-- 체크박스로 학생 목록 표시 -->
                                     </div>
                                     <button type="button" id="select-all-students"
-                                        class="mt-2 px-3 py-1 bg-gray-600 text-white rounded hover:bg-emerald-500">전체 선택</button>
+                                        class="mt-2 px-3 py-1 bg-gray-600 text-white rounded hover:bg-emerald-500">전체
+                                        선택</button>
                                 </div>
-                                
+
                                 <!-- 기간 -->
                                 <div>
                                     <label class="block text-gray-300 mb-1">퀘스트 기간</label>
@@ -492,11 +531,13 @@
                                         <label for="enable-period" class="text-gray-300">기간 설정</label>
                                     </div>
                                     <div id="quest-period-inputs" class="hidden space-x-2">
-                                        <input id="quest-start" type="date" class="px-2 py-1 rounded bg-gray-700 text-white border border-gray-600">
-                                        <input id="quest-end" type="date" class="px-2 py-1 rounded bg-gray-700 text-white border border-gray-600">
+                                        <input id="quest-start" type="date"
+                                            class="px-2 py-1 rounded bg-gray-700 text-white border border-gray-600">
+                                        <input id="quest-end" type="date"
+                                            class="px-2 py-1 rounded bg-gray-700 text-white border border-gray-600">
                                     </div>
                                 </div>
-                                
+
                                 <!-- 반복 여부 -->
                                 <div>
                                     <label class="block text-gray-300 mb-1">반복 여부</label>
@@ -508,15 +549,17 @@
                                         <option value="monthly">월간</option>
                                     </select>
                                 </div>
-                                
+
                                 <!-- 제출 -->
                                 <div class="flex justify-end space-x-2">
-                                    <button type="submit" class="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600">등록</button>
-                                    <button type="reset" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">초기화</button>
+                                    <button type="submit"
+                                        class="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600">등록</button>
+                                    <button type="reset"
+                                        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">초기화</button>
                                 </div>
                             </form>
                         </div>
-                        
+
                         <div id="quest-history-section" class="hidden">
                             <p class="text-gray-400">종료된 퀘스트 기록이 여기에 표시됩니다.</p>
                         </div>
@@ -525,12 +568,12 @@
             </div>
         </div>
 
-            <!-- Loading Spinner -->
-            <div id="loading-spinner" class="hidden flex flex-col items-center justify-center p-8">
-                <i class="fas fa-spinner fa-spin text-5xl text-emerald-400 mb-4"></i>
-                <p class="text-xl text-gray-400 font-semibold">데이터를 불러오는 중...</p>
-            </div>
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="hidden flex flex-col items-center justify-center p-8">
+            <i class="fas fa-spinner fa-spin text-5xl text-emerald-400 mb-4"></i>
+            <p class="text-xl text-gray-400 font-semibold">데이터를 불러오는 중...</p>
         </div>
+    </div>
     </div>
 
     <!-- Custom Modal for Messages -->
@@ -573,7 +616,7 @@
         import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, orderBy, onSnapshot, serverTimestamp, setLogLevel, limit, increment, runTransaction } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
         import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-functions.js";
-        
+
         // Constants from the execution environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'Learning_Explorer';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -593,16 +636,16 @@
         let auth = getAuth(app);
         let functions = getFunctions(app);
         let isAuthReady = false;
-        
+
         // 전역 변수 설정
         let userId = null;
         let studentDataCache = null;
 
         // ✅ 능력치 라벨 매핑
         const statLabels = {
-            stamina: "건강", 
-            attack: "공격력", 
-            defense: "방어력", 
+            stamina: "건강",
+            attack: "공격력",
+            defense: "방어력",
             luck: "행운"
         };
 
@@ -657,6 +700,79 @@
         const shopSection = document.getElementById('shop-section');
         const teacherPendingStudentsSection = document.getElementById('teacher-pending-students-section');
         const teacherPendingLogsSection = document.getElementById('teacher-pending-logs-section');
+
+        /** ========= KST(Asia/Seoul) 주기 유틸 ========= */
+        const KST_OFFSET_MIN = 9 * 60; // UTC+9
+        //   const MIN_MS = 60 * 1000;
+        //   const DAY_MS = 24 * 60 * MIN_MS;          
+        const toKST = (d) => new Date(d.getTime() + KST_OFFSET_MIN * MIN_MS);
+        const fromKST = (d) => new Date(d.getTime() - KST_OFFSET_MIN * MIN_MS);
+        const startOfKSTDayUTC = (d) => {
+            const k = toKST(d);
+            k.setHours(0, 0, 0, 0);
+            return fromKST(k);
+        };
+
+        // 주간: 월요일 0시 기준
+        function nextDailyResetUTC(now = new Date()) {
+            const tomorrowKST0UTC = new Date(startOfKSTDayUTC(now).getTime() + DAY_MS);
+            return tomorrowKST0UTC;
+        }
+        function nextWeeklyResetUTC(now = new Date()) {
+            const k = toKST(now);
+            const day = k.getDay(); // 0:일 ~ 6:토
+            const k0 = new Date(k); k0.setHours(0, 0, 0, 0);
+            let add = (8 - day) % 7; // 다음 월요일까지 남은 일수
+            if (add === 0 && k > k0) add = 7; // 월요일 0시 지났으면 다음 주 월요일
+            const nextK = new Date(k0.getTime() + add * DAY_MS);
+            return fromKST(nextK);
+        }
+        function nextMonthlyResetUTC(now = new Date()) {
+            const k = toKST(now);
+            const firstNext = new Date(k.getFullYear(), k.getMonth() + 1, 1, 0, 0, 0, 0); // KST
+            return fromKST(firstNext);
+        }
+        // 주기 키: 중복 완료 방지/초기화 판정에 사용
+        function dailyKeyKST(d = new Date()) {
+            const k = toKST(d);
+            const y = k.getFullYear();
+            const m = String(k.getMonth() + 1).padStart(2, '0');
+            const dd = String(k.getDate()).padStart(2, '0');
+            return `${y}-${m}-${dd}`; // 예: 2025-09-25
+        }
+
+        function weeklyKeyKST(d = new Date()) {
+            // 해당 주(월요일)의 날짜를 키로 사용 (주 번호 계산 대신 안정적)
+            const k = toKST(d);
+            const day = k.getDay(); // 0:일 ~ 6:토
+            const diffToMonday = (day + 6) % 7; // 월(1) 기준으로 뒤로 갈 일수
+            const monday = new Date(k.getFullYear(), k.getMonth(), k.getDate() - diffToMonday, 0, 0, 0, 0);
+            const y = monday.getFullYear();
+            const m = String(monday.getMonth() + 1).padStart(2, '0');
+            const dd = String(monday.getDate()).padStart(2, '0');
+            return `${y}-${m}-${dd}`; // 예: 2025-09-22 (그 주의 월요일)
+        }
+
+        function monthlyKeyKST(d = new Date()) {
+            const k = toKST(d);
+            const y = k.getFullYear();
+            const m = String(k.getMonth() + 1).padStart(2, '0');
+            return `${y}-${m}`; // 예: 2025-09
+        }
+
+        function currentPeriodKey(repeatType) {
+            if (repeatType === 'daily') return dailyKeyKST();
+            if (repeatType === 'weekly') return weeklyKeyKST();
+            if (repeatType === 'monthly') return monthlyKeyKST();
+            return null;
+        }
+        function nextResetUTC(repeatType) {
+            if (repeatType === 'daily') return nextDailyResetUTC();
+            if (repeatType === 'weekly') return nextWeeklyResetUTC();
+            if (repeatType === 'monthly') return nextMonthlyResetUTC();
+            return null;
+        }
+        /** ========================================= */
 
         // Initial stat values for new students
         const initialStats = {
@@ -732,7 +848,7 @@
                         password: 'superteacher'
                     });
                 }
-                
+
                 // Initialize a base quest in the database if it doesn't exist
                 const questDocRef = doc(db, `artifacts/${appId}/public/data/quests`, 'daily_diary_quest');
                 const questDocSnap = await getDoc(questDocRef);
@@ -854,7 +970,7 @@
                     orderBy("timestamp", "desc")
                 );
                 const querySnapshot = await getDocs(q);
-                
+
                 const container = document.getElementById("growth-log-container");
                 container.innerHTML = ""; // 기존 안내 문구 제거
 
@@ -864,16 +980,16 @@
                     querySnapshot.forEach(doc => {
                         const logData = doc.data();
                         const logDate = logData.timestamp?.toDate().toLocaleString("ko-KR") || "날짜 없음";
-                        
+
                         const logElement = document.createElement("div");
                         logElement.classList.add("bg-gray-700", "p-4", "rounded-lg");
-                        
+
                         logElement.innerHTML = `
                         <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
                         <p class="text-white mb-2">${logData.content}</p>
                         <p class="text-sm text-gray-500">평가: ${logData.evaluation || "아직 없음"}</p>
                         `;
-                        
+
                         container.appendChild(logElement);
                     });
                 }
@@ -882,56 +998,56 @@
                 showMessageModal("오류", "성장일지를 불러오는 데 실패했습니다.");
             }
         }
-        
+
         // 전역
         let unsubscribeGrowthReward = null;
-        
+
         /** 보상 리스너 (best/confirmed만 보며, rewarded=true로 마킹) */
         function listenForRewards() {
             // 이미 구독 중이면 중복 방지
             if (typeof unsubscribeGrowthReward === 'function') return;
-            
+
             const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
             const q = query(
                 logsRef,
                 where("student_id", "==", String(userId || "")),   // userId 없으면 빈 결과
                 where("status", "in", ["best", "confirmed"])
                 // 필요하면 where("rewarded","==",false)도 추가 가능
-                );
-            
+            );
+
             unsubscribeGrowthReward = onSnapshot(
                 q,
                 (snap) => {
                     // 인증/아이디 준비 안 됐으면 아무 것도 하지 않음
                     if (!auth.currentUser || !userId) return;
-                    
+
                     snap.docChanges().forEach((chg) => {
                         if (chg.type !== "added" && chg.type !== "modified") return;
-                        
+
                         const sid = String(userId || "");
                         if (!sid) return;
-                        
+
                         const logRef = chg.doc.ref;
                         const studentRef = doc(db, `artifacts/${appId}/public/data/students`, sid);
-                        
+
                         // ✅ 트랜잭션에서 '실제 지급했는지 여부'를 반환
                         runTransaction(db, async (tx) => {
                             const freshLog = await tx.get(logRef);
                             if (!freshLog.exists()) return;
-                            
+
                             const d = freshLog.data();
                             if (d.rewarded === true) return false; // 이미 지급됨 → 변경 없음
-                            
+
                             const expGain = d.status === "best" ? 30 : 20;
                             const diaGain = 10;
-                            
+
                             const stuSnap = await tx.get(studentRef);
                             if (!stuSnap.exists()) return false;
-                            
+
                             tx.update(studentRef, { exp: increment(expGain), diamonds: increment(diaGain) });
                             tx.update(logRef, { rewarded: true, rewardedAt: serverTimestamp() });
                             return true; // ✅ 실제로 지급 완료
-                        
+
                         }).then((didReward) => {
                             // ✅ 실제 지급이 일어난 경우에만 팝업 1회 표시
                             if (!didReward) return;
@@ -953,7 +1069,7 @@
                 }
             );
         }
-        
+
         /**
          * Renders the teacher dashboard with real-time data from Firestore.
          */
@@ -997,7 +1113,7 @@
             const pendingLogsContainer = document.getElementById('pending-growth-logs-list');
             const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
             const qLogs = query(logsRef, where("status", "==", "pending"));
-            
+
             showView('teacherDashboard');
         }
 
@@ -1011,35 +1127,48 @@
             const mySeq = ++window.__questRenderSeq;
             const dailyQuestContainer = document.getElementById('daily-quest-container');
             const completedQuestsContainer = document.getElementById('completed-quests-container');
-            
+
             dailyQuestContainer.innerHTML = '';
             completedQuestsContainer.innerHTML = '';
-            
+
             const questsRef = collection(db, `artifacts/${appId}/public/data/quests`);
-            
+            // 다음 초기화 타이머(중복 방지)
+            if (window.__questResetTimer) {
+                clearTimeout(window.__questResetTimer);
+                window.__questResetTimer = null;
+            }
+            // ✅ 초기화 시각(UTC) 최소값을 함수 스코프에서 누적
+            let nearestResetUTC = null;
+
             // 1) 현재 부여된 퀘스트
             try {
                 const qAssigned = query(questsRef, where("assigned_students", "array-contains", userId));
                 const assignedSnap = await getDocs(qAssigned);
                 // ✅ 더 새로운 렌더가 시작되었으면 즉시 중단
                 if (mySeq !== window.__questRenderSeq) return;
-                
+
                 if (assignedSnap.empty) {
                     const noAssigned = document.createElement('p');
                     noAssigned.className = 'text-gray-400 mb-4';
                     noAssigned.textContent = '현재 부여된 퀘스트가 없습니다.';
                     dailyQuestContainer.appendChild(noAssigned);
-                } else {                 
-                    assignedSnap.forEach(docSnap => {
+                } else {
+                    assignedSnap.forEach((docSnap) => {
                         const qd = docSnap.data();
                         const questId = docSnap.id;
+                        const repeatType = qd?.repeat || 'none'; // daily/weekly/monthly/none
+                        const keyNow = currentPeriodKey(repeatType); // null 가능
+                        const resetUTC = nextResetUTC(repeatType);
+                        if (resetUTC) {
+                            if (!nearestResetUTC || resetUTC < nearestResetUTC) nearestResetUTC = resetUTC;
+                        }
                         const rewards = qd.rewards || {};
                         const expReward = rewards.exp || 0;
                         const diaReward = rewards.dia || 0;
                         const growthReward = rewards.growth || 0;
-                        
+
                         const isCompleted = !!studentData.quests?.[questId]?.completed_at;
-                        
+
                         if (!isCompleted) {
                             const card = document.createElement('div');
                             card.className = 'bg-gray-700 rounded-lg p-4 space-y-2 mb-3';
@@ -1053,29 +1182,70 @@
                             </button>
                             `;
                             dailyQuestContainer.appendChild(card);
-                            
-                            // 완료 버튼 이벤트
-                            card.querySelector('.complete-quest-btn').addEventListener('click', async () => {
-                                const btnEl = card.querySelector('.complete-quest-btn');
-                                btnEl.disabled = true; btnEl.textContent = '처리 중...';
-                                if (mySeq !== window.__questRenderSeq) return;
-                                const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
-                                
-                                await updateDoc(studentRef, {
-                                    [`quests.${questId}`]: {
-                                        completed_at: serverTimestamp(),
-                                        description: qd.description || '',
-                                        rewards: { exp: expReward, dia: diaReward, growth: growthReward }
-                                    },
-                                    exp: increment(expReward),
-                                    diamonds: increment(diaReward),
-                                    growth_points: increment(growthReward)
+
+                            // 완료 버튼 이벤트 (반복 주기 + 중복 클릭/중복 렌더 방지)
+                            (function attachCompleteHandler() {
+                                const btn = card.querySelector('.complete-quest-btn');
+                                if (!btn) return;
+                                // 반복 유형: 'daily' | 'weekly' | 'monthly' | 'none' (마스터 문서의 qd.repeat)
+                                const repeatType = qd?.repeat || 'none';
+                                const keyNow = currentPeriodKey(repeatType); // 반복 아닌 경우 null
+
+                                // 학생 문서에 저장된 현재 퀘스트 상태
+                                const studentQuest = (studentData.quests && studentData.quests[questId]) || null;
+                                const alreadyKey = studentQuest?.last_key || null;
+
+                                // 이번 주기에 이미 완료했으면 비활성화
+                                const available = repeatType === 'none' ? !studentQuest?.completed_at : (alreadyKey !== keyNow);
+                                if (!available) {
+                                    btn.disabled = true;
+                                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                                    btn.textContent = '이번 주기는 완료됨';
+                                    return;
+                                }
+                                btn.addEventListener('click', async () => {
+                                    // 중복 클릭 방지
+                                    btn.disabled = true;
+                                    const originalText = btn.textContent;
+                                    btn.textContent = '처리 중...';
+
+                                    try {
+                                        // 보상 수치는 마스터 문서(qd.rewards)에서 읽되, 없으면 0
+                                        const expReward = Number(qd?.rewards?.exp || 0);
+                                        const diaReward = Number(qd?.rewards?.dia || 0);
+                                        const growthReward = Number(qd?.rewards?.growth || 0);
+
+                                        const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
+                                        const setObj = {
+                                            completed_at: serverTimestamp(),
+                                            description: qd?.description || '',
+                                            rewards: { exp: expReward, dia: diaReward, growth: growthReward }
+                                        };
+                                        if (keyNow) setObj.last_key = keyNow; // ✅ 반복 퀘스트: 주기 키 저장
+
+                                        await updateDoc(studentRef, {
+                                            [`quests.${questId}`]: setObj,
+                                            exp: increment(expReward),
+                                            diamonds: increment(diaReward),
+                                            growth_points: increment(growthReward)
+                                        });
+
+                                        showMessageModal('완료', `${qd?.name || '퀘스트'}를 완료했습니다!`);
+                                        // 화면 갱신은 onSnapshot에서 자동 반영되도록, 여기서 수동 렌더 호출은 하지 않습니다.
+                                    } catch (err) {
+                                        console.error('퀘스트 완료 처리 실패:', err);
+                                        showMessageModal('오류', '퀘스트 완료 처리 중 문제가 발생했습니다.');
+                                        // 실패 시 원복
+                                        btn.disabled = false;
+                                        btn.textContent = originalText;
+                                        return;
+                                    }
+
+                                    // 성공 시 버튼 상태 고정
+                                    btn.textContent = '이번 주기는 완료됨';
+                                    btn.classList.add('opacity-50', 'cursor-not-allowed');
                                 });
-                                
-                                showMessageModal('완료', `${qd.name || '퀘스트'}를 완료했습니다!`);
-                                // ✅ 화면 갱신은 학생 onSnapshot에서 자동 반영됨
-                                btnEl.disabled = false; btnEl.textContent = '퀘스트 완료';
-                            });
+                            })();
                         }
                     });
                 }
@@ -1087,6 +1257,19 @@
                 dailyQuestContainer.appendChild(errorMsg);
             }
             
+            // ===== 다음 초기화 타이머 (렌더 루프 끝에서 한 번만 세팅) =====
+            try {
+                if (nearestResetUTC) {
+                    if (window.__questResetTimer) clearTimeout(window.__questResetTimer);
+                    const delay = Math.max(0, nearestResetUTC.getTime() - Date.now() + 500);
+                    window.__questResetTimer = setTimeout(() => {
+                        if (typeof studentDataCache === 'object') {
+                            renderQuest(studentDataCache);
+                        }
+                    }, delay);
+                }
+            } catch { }
+
             // 2) 완료한 퀘스트 (최근 3개, 아코디언, 더보기)
             const questsObj = studentData.quests || {};
             let completedQuests = Object.entries(questsObj).filter(([_, v]) => v?.completed_at);
@@ -1094,19 +1277,19 @@
                 completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
                 return;
             }
-            
+
             completedQuests.sort((a, b) => b[1].completed_at.toDate() - a[1].completed_at.toDate());
-            
+
             let visibleCount = 3;
             async function renderCompleted(list, count) {
                 completedQuestsContainer.innerHTML = '';
                 // ✅ 더 새로운 렌더가 시작되었으면 이 렌더 중단
                 const localSeq = mySeq;
                 const stillMine = () => localSeq === window.__questRenderSeq;
-                
+
                 // 화면에 보여줄 범위의 완료 퀘스트만 선택
                 const slice = list.slice(0, count);
-                
+
                 for (const [qid, value] of slice) {
                     // 퀘스트 제목 조회 (name 필드). 실패 시 fallback으로 qid 표시
                     let questName = qid;
@@ -1121,20 +1304,20 @@
                     } catch (e) {
                         console.error('퀘스트 제목 불러오기 실패:', e);
                     }
-                    
+
                     const rewards = value.rewards || {};
                     const date = value.completed_at.toDate().toLocaleString();
-                    
+
                     const wrapper = document.createElement('div');
                     wrapper.className = 'bg-gray-700 rounded mb-2';
-                    
+
                     const header = document.createElement('div');
                     header.className = 'flex justify-between items-center p-2';
                     header.innerHTML = `
                     <span class="text-gray-300 font-semibold">${questName}</span>
                     <button class="toggle-detail px-2 py-1 bg-blue-500 text-white rounded text-sm">보기</button>
                     `;
-                    
+
                     const detail = document.createElement('div');
                     detail.className = 'hidden px-3 pb-3 text-sm text-gray-300';
                     detail.innerHTML = `
@@ -1143,16 +1326,16 @@
                     <p class="text-xs text-gray-400">완료일: ${date}</p>
                     `;
                     if (!stillMine()) return;
-                    
+
                     header.querySelector('.toggle-detail').addEventListener('click', () => {
                         detail.classList.toggle('hidden');
                     });
-                    
+
                     wrapper.appendChild(header);
                     wrapper.appendChild(detail);
                     completedQuestsContainer.appendChild(wrapper);
                 }
-                
+
                 if (list.length > count) {
                     const moreBtn = document.createElement('button');
                     moreBtn.className = 'w-full mt-2 px-3 py-1 bg-gray-600 text-white rounded';
@@ -1164,11 +1347,11 @@
                     completedQuestsContainer.appendChild(moreBtn);
                 }
             }
-            
+
             // 최초 렌더 호출
             renderCompleted(completedQuests, visibleCount);
         }
-        
+
         /**
         * Renders the student's growth log history.
         */
@@ -1229,7 +1412,7 @@
                 logContainer.innerHTML = '<p class="text-red-400">성장 기록을 불러오는 중 오류가 발생했습니다.</p>';
             });
         }
-        
+
         /**
          * Logs an event to the student's growth log.
          * @param {string} studentId - The ID of the student.
@@ -1262,7 +1445,7 @@
 
             const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
             const questDocRef = doc(db, `artifacts/${appId}/public/data/quests`, questId);
-            
+
             const [studentDocSnap, questDocSnap] = await Promise.all([
                 getDoc(studentDocRef),
                 getDoc(questDocRef)
@@ -1275,7 +1458,7 @@
 
             const studentData = studentDocSnap.data();
             const questData = questDocSnap.data();
-            
+
             const questCompletedAt = studentData.quests?.[questId]?.completed_at;
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1307,20 +1490,20 @@
                 showMessageModal('오류', '퀘스트 완료 중 오류가 발생했습니다.');
             }
         }
-        
+
         // 함수 상단(또는 파일 상단)에 보조 함수 2개 추가
-        function makeSafeName(name){
+        function makeSafeName(name) {
             // 슬래시 등 금지문자 제거 & 한글/영문/숫자/밑줄/대시는 허용
             return (name || '').trim()
                 .replace(/[\/]+/g, '-')               // 슬래시는 대시로
                 .replace(/[^\p{L}\p{N}_-]+/gu, '_')   // 나머지는 언더스코어
-            || 'unknown';
+                || 'unknown';
         }
-        function formatDateId(d){
-            const p = n => String(n).padStart(2,'0');
-            return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+        function formatDateId(d) {
+            const p = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
         }
-        
+
         /**
          * Handles the growth log submission button click.
          */
@@ -1366,11 +1549,11 @@
                     showMessageModal('제출 실패', '오늘은 이미 성장일지를 제출했습니다.');
                     return;
                 }
-                
+
                 // 문서 ID: "이름_YYYYMMDD_HHmmss"
                 const docId = `${makeSafeName(studentData.name)}_${formatDateId(new Date())}`;
                 const logRef = doc(logsCollectionRef, docId);
-                
+
                 await setDoc(logRef, {
                     student_id: userId,
                     student_name: studentData.name,
@@ -1403,7 +1586,7 @@
                 showMessageModal('오류', '성장일지 ID를 찾을 수 없습니다.');
                 return;
             }
-            
+
             try {
                 const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
                 const logDocSnap = await getDoc(logDocRef);
@@ -1411,11 +1594,11 @@
                     showMessageModal('오류', '성장일지 정보를 찾을 수 없습니다.');
                     return;
                 }
-                
+
                 // 평가 결과 저장 (status + evaluation)
                 await updateDoc(logDocRef, { status: 'best', evaluation: '최고' });
                 showMessageModal('평가 완료', "성장일지를 '최고'로 평가했습니다.");
-                
+
                 // 필요 시 목록 새로고침이 있다면 여기서 호출
                 // renderUnverifiedLogs?.();
             } catch (error) {
@@ -1423,7 +1606,7 @@
                 showMessageModal('오류', '승인 처리 중 오류가 발생했습니다.');
             }
         }
-        
+
         /**
         * Handles teacher rejection/confirmation of a growth log.
         * @param {Event} e - Click event.
@@ -1436,7 +1619,7 @@
                 showMessageModal('오류', '성장일지 ID를 찾을 수 없습니다.');
                 return;
             }
-            
+
             try {
                 const logDocRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
                 const logDocSnap = await getDoc(logDocRef);
@@ -1444,11 +1627,11 @@
                     showMessageModal('오류', '성장일지 정보를 찾을 수 없습니다.');
                     return;
                 }
-                
+
                 // 평가 결과 저장 (status + evaluation)
                 await updateDoc(logDocRef, { status: 'confirmed', evaluation: '확인' });
                 showMessageModal('평가 완료', "성장일지를 '확인'으로 평가했습니다.");
-                
+
                 // 필요 시 목록 새로고침이 있다면 여기서 호출
                 // renderUnverifiedLogs?.();
             } catch (error) {
@@ -1498,13 +1681,13 @@
             try {
                 const registerDocRef = doc(db, `artifacts/${appId}/public/data/register`, docId);
                 const registerDocSnap = await getDoc(registerDocRef);
-                
+
                 if (!registerDocSnap.exists()) {
                     showMessageModal('오류', '신청 정보를 찾을 수 없습니다.');
                     return;
                 }
                 const studentData = registerDocSnap.data();
-                
+
                 if (action === 'approve') {
                     // register 문서에 저장된 학생 입력 아이디를 문서 ID로 사용
                     const studentIdFromForm = studentData.id; // 예: "s2025_01_01"
@@ -1518,10 +1701,10 @@
                         approvedBy: userId,
                         createdAt: serverTimestamp()
                     });
-                    
+
                     // ✅ register 문서 삭제 (status 업데이트 대신)
                     await deleteDoc(registerDocRef);
-                    
+
                     showMessageModal('승인 완료', `${studentData.name} 학생이 성공적으로 승인되었습니다!`);
                 } else if (action === 'reject') {
                     await deleteDoc(registerDocRef);
@@ -1666,24 +1849,24 @@
             teacherTabPendingStudentsBtn.classList.remove('border-transparent', 'text-gray-400');
             teacherTabPendingStudentsBtn.classList.add('border-emerald-400', 'text-emerald-400');
         });
-        
+
         // '성장일지 관리' 탭 전환 로직
         const teacherTabGrowthLogBtn = document.getElementById('teacherTabGrowthLogBtn');
         const growthLogManagementTab = document.getElementById('growth-log-management-tab');
-        
+
         teacherTabGrowthLogBtn.addEventListener('click', () => {
             // 모든 탭 숨기기
             document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
-            
+
             // 성장일지 탭 보이기
             growthLogManagementTab.classList.remove('hidden');
-            
+
             // 모든 탭 버튼 비활성화
             document.querySelectorAll('#teacher-dashboard-view .border-b-2').forEach(btn => {
                 btn.classList.remove('border-emerald-400', 'text-emerald-400');
                 btn.classList.add('border-transparent', 'text-gray-400');
             });
-            
+
             // 현재 탭 버튼 활성화
             teacherTabGrowthLogBtn.classList.remove('border-transparent', 'text-gray-400');
             teacherTabGrowthLogBtn.classList.add('border-emerald-400', 'text-emerald-400');
@@ -1762,7 +1945,7 @@
 
                 // 비밀번호를 SHA-256으로 해시하여 보안 강화
                 const hashedPassword = sha256(password);
-                
+
                 await setDoc(doc(db, `artifacts/${appId}/public/data/register`, id), {
                     id: id,
                     password: hashedPassword,
@@ -1810,7 +1993,7 @@
             auth.signOut();
             showView('landing');
         });
-        
+
         // Teacher code change modal buttons
         changeTeacherCodeBtn.addEventListener('click', () => {
             teacherCodeModalOverlay.classList.remove('hidden');
@@ -1830,7 +2013,7 @@
         const unverifiedLogsSection = document.getElementById('unverified-logs-section');
         const allLogsSection = document.getElementById('all-logs-section');
         const unverifiedLogList = document.getElementById('unverified-log-list');
-        
+
         // 기존 성장일지 관리 변수 재정의
         const studentListContainer = document.getElementById('student-list');
         const growthLogContainer = document.getElementById('teacher-growth-log-container');
@@ -1839,26 +2022,26 @@
 
         // ----- 미확인 성장일지 실시간 구독 -----
         let unsubscribePending = null;
-        
+
         // 미확인 성장일지 불러오기 및 렌더링
         async function renderUnverifiedLogs() {
             try {
                 if (!unverifiedLogList) return;
                 unverifiedLogList.innerHTML = '<p class="text-gray-400">불러오는 중...</p>';
-                
+
                 const logsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
                 const q = query(
                     logsRef,
                     where("status", "==", "pending"),
                     orderBy("timestamp", "desc") // 인덱스 에러 나면 이 줄만 잠시 제거
-                    );
-                
+                );
+
                 // 이전 구독이 있으면 해제(중복 방지)
                 if (typeof unsubscribePending === 'function') {
                     unsubscribePending();
                     unsubscribePending = null;
                 }
-                
+
                 // 실시간 구독으로 즉시/자동 반영
                 unsubscribePending = onSnapshot(q, (querySnapshot) => {
                     unverifiedLogList.innerHTML = '';
@@ -1866,18 +2049,18 @@
                         unverifiedLogList.innerHTML = '<p class="text-gray-400">미확인된 성장일지가 없습니다.</p>';
                         return;
                     }
-                    
+
                     querySnapshot.forEach((docSnap) => {
                         const logData = docSnap.data();
                         const logDate = logData.timestamp?.toDate
                             ? logData.timestamp.toDate().toLocaleDateString('ko-KR')
                             : '날짜 없음';
-                        
+
                         const el = document.createElement('div');
-                        el.classList.add('bg-gray-900','p-4','rounded-lg','shadow-inner','mb-2','relative');
+                        el.classList.add('bg-gray-900', 'p-4', 'rounded-lg', 'shadow-inner', 'mb-2', 'relative');
                         el.innerHTML = `
                         <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
-                        <p class="text-white mb-2">${(logData.content || '').replace(/\n/g,'<br>')}</p>
+                        <p class="text-white mb-2">${(logData.content || '').replace(/\n/g, '<br>')}</p>
                         <div class="mt-4 flex gap-2">
                         <button class="btn-primary text-sm px-3 py-1 rounded-full approve-btn" data-log-id="${docSnap.id}">최고</button>
                         <button class="btn-secondary text-sm px-3 py-1 rounded-full check-btn" data-log-id="${docSnap.id}">확인</button>
@@ -1889,21 +2072,21 @@
                     console.error("미확인 성장일지 구독 실패:", error);
                     unverifiedLogList.innerHTML = '<p class="text-red-400">목록을 불러오지 못했습니다.</p>';
                 });
-                
+
             } catch (error) {
                 console.error("미확인 성장일지 불러오기 실패:", error);
                 showMessageModal('오류', '미확인 성장일지를 불러오는 데 실패했습니다.');
             }
         }
-        
-        
+
+
         // 전체 성장일지 (학생 목록) 불러오기
         async function renderStudentList() {
             try {
                 const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
                 const q = query(studentsRef, orderBy("number", "asc"));
                 const querySnapshot = await getDocs(q);
-        
+
                 studentListContainer.innerHTML = '';
                 if (querySnapshot.empty) {
                     studentListContainer.innerHTML = '<p class="text-gray-400">등록된 학생이 없습니다.</p>';
@@ -1922,7 +2105,7 @@
                 showMessageModal('오류', '학생 목록을 불러오는 데 실패했습니다.');
             }
         }
-        
+
         function handleStudentListClick(e) {
             const studentBtn = e.target.closest('button.student-item');
             if (studentBtn) {
@@ -1931,18 +2114,18 @@
                 renderGrowthLogsWithEvaluation(studentId, studentName);
             }
         }
-        
+
         // 특정 학생의 성장일지 목록 불러오기 (평가 버튼 조건부 표시)
         async function renderGrowthLogsWithEvaluation(studentId, studentName) {
             try {
                 const growthLogsRef = collection(db, `artifacts/${appId}/public/data/growth_logs`);
                 const q = query(growthLogsRef, where("student_id", "==", studentId), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(q);
-        
+
                 selectedStudentName.textContent = `${studentName} 학생의 성장일지`;
                 growthLogList.innerHTML = '';
                 growthLogContainer.classList.remove('hidden');
-        
+
                 if (querySnapshot.empty) {
                     growthLogList.innerHTML = '<p class="text-gray-400">제출된 성장일지가 없습니다.</p>';
                 } else {
@@ -1951,7 +2134,7 @@
                         const logDate = logData.timestamp?.toDate().toLocaleString("ko-KR") || "날짜 없음";
                         const logElement = document.createElement('div');
                         logElement.classList.add('bg-gray-900', 'p-4', 'rounded-lg', 'shadow-inner', 'mb-2', 'relative');
-                        
+
                         let evaluationButtonsHTML = '';
                         if (!logData.evaluation) { // 미평가 상태일 때만 버튼 추가
                             evaluationButtonsHTML = `
@@ -1961,7 +2144,7 @@
                                 </div>
                             `;
                         }
-        
+
                         logElement.innerHTML = `
                             <p class="text-sm text-gray-400 mb-1">날짜: ${logDate}</p>
                             <p class="text-white mb-2">${logData.content}</p>
@@ -1979,7 +2162,7 @@
                 showMessageModal('오류', '성장일지를 불러오는 데 실패했습니다.');
             }
         }
-        
+
         // 탭 버튼 클릭 이벤트 리스너
         unverifiedLogsTabBtn.addEventListener('click', () => {
             unverifiedLogsSection.classList.remove('hidden');
@@ -1988,7 +2171,7 @@
             allLogsTabBtn.classList.remove('border-green-400', 'text-green-400');
             renderUnverifiedLogs();
         });
-        
+
         allLogsTabBtn.addEventListener('click', () => {
             allLogsSection.classList.remove('hidden');
             unverifiedLogsSection.classList.add('hidden');
@@ -1996,7 +2179,7 @@
             unverifiedLogsTabBtn.classList.remove('border-green-400', 'text-green-400');
             renderStudentList();
         });
-        
+
         // 학생 목록 버튼 클릭 이벤트 리스너
         studentListContainer.addEventListener('click', async (e) => {
             const studentButton = e.target.closest('button');
@@ -2006,30 +2189,30 @@
                 await renderGrowthLogsWithEvaluation(studentId, studentName);
             }
         });
-        
+
         // 평가 버튼 클릭 이벤트 리스너 (미확인 탭과 전체 탭에서 모두 사용)
         document.addEventListener('click', async (e) => {
             const btn = e.target.closest('.approve-btn, .check-btn');
             if (!btn) return;
-            
+
             const logId = btn.getAttribute('data-log-id');
             if (!logId) return;
-            
-                const isBest = btn.classList.contains('approve-btn'); // '최고' 버튼인지 확인
-                const newStatus = isBest ? 'best' : 'confirmed';
-                const evaluationText = isBest ? '최고' : '확인';
-            
+
+            const isBest = btn.classList.contains('approve-btn'); // '최고' 버튼인지 확인
+            const newStatus = isBest ? 'best' : 'confirmed';
+            const evaluationText = isBest ? '최고' : '확인';
+
             try {
                 const logRef = doc(db, `artifacts/${appId}/public/data/growth_logs`, logId);
-                    // 교사 평가는 상태만 기록하고 보상은 리스너에서 트랜잭션으로 처리
-                    await updateDoc(logRef, {
-                        status: newStatus,
-                        evaluation: evaluationText,
-                        rewarded: false
-                    });
-                
+                // 교사 평가는 상태만 기록하고 보상은 리스너에서 트랜잭션으로 처리
+                await updateDoc(logRef, {
+                    status: newStatus,
+                    evaluation: evaluationText,
+                    rewarded: false
+                });
+
                 showMessageModal('평가 완료', `성장일지가 '${evaluationText}'(으)로 평가되었습니다.`);
-                
+
                 // 목록 새로고침
                 renderUnverifiedLogs();
                 if (!allLogsSection.classList.contains('hidden')) {
@@ -2044,32 +2227,32 @@
             }
         });
 
-        
+
         // 초기 로딩 시 미확인 성장일지 탭 활성화
         unverifiedLogsTabBtn.click();
-        
+
         // 성장일지 관리 탭 진입 시 학생 목록 렌더링
         // (탭 전환 로직에 이 함수를 호출하는 코드를 추가해야 함)
         // 예: showView('teacherDashboard', 'growth-log-management-tab');
         document.addEventListener('DOMContentLoaded', renderStudentList);
-        
+
         const studentList = document.getElementById('student-list');
         if (studentList) {
             studentList.addEventListener('click', handleStudentListClick);
         }
-        
+
         // 새 탭 요소
         const teacherTabStudentsBtn = document.getElementById('teacher-tab-students');
         const teacherStudentsSection = document.getElementById('teacher-students-section');
         const studentsOverviewList = document.getElementById('students-overview-list');
-        
+
         // 학생 정보 확인 탭 클릭 시
         teacherTabStudentsBtn.addEventListener('click', async () => {
             // 모든 섹션 숨기기
             document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
             // 현재 섹션만 표시
             teacherStudentsSection.classList.remove('hidden');
-            
+
             // 탭 버튼 스타일 초기화
             document.querySelectorAll('#teacher-dashboard-view .border-b-2').forEach(btn => {
                 btn.classList.remove('border-emerald-400', 'text-emerald-400');
@@ -2078,11 +2261,11 @@
             // 현재 탭 활성화
             teacherTabStudentsBtn.classList.remove('border-transparent', 'text-gray-400');
             teacherTabStudentsBtn.classList.add('border-emerald-400', 'text-emerald-400');
-            
+
             // 목록 렌더링
             await renderStudentsOverview();
         });
-        
+
         // 학생 목록 렌더링 (학생 정보 확인 탭 전용)
         async function renderStudentsOverview() {
             try {
@@ -2090,13 +2273,13 @@
                 const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
                 const q = query(studentsRef, orderBy("number", "asc"));
                 const snapshot = await getDocs(q);
-                
+
                 studentsOverviewList.innerHTML = '';
                 if (snapshot.empty) {
                     studentsOverviewList.innerHTML = '<p class="text-gray-400">등록된 학생이 없습니다.</p>';
                     return;
                 }
-                
+
                 snapshot.forEach(docSnap => {
                     const s = docSnap.data();
                     const row = document.createElement('div');
@@ -2116,25 +2299,25 @@
                 showMessageModal('오류', '학생 목록을 불러오는 데 실패했습니다.');
             }
         }
-        
+
         // 상세 보기 모달 로직
         const studentDetailModal = document.getElementById('student-detail-modal');
         const closeStudentDetailBtn = document.getElementById('close-student-detail');
-        
+
         studentsOverviewList.addEventListener('click', async (e) => {
             const btn = e.target.closest('button[data-student-id]');
             if (!btn) return;
             const sid = btn.getAttribute('data-student-id');
             await openStudentDetail(sid);
         });
-        
+
         closeStudentDetailBtn.addEventListener('click', () => {
             studentDetailModal.classList.add('hidden');
         });
-        
+
         // 현재 선택된 학생 ID 저장용
         let currentStudentId = null;
-        
+
         // 상세 보기 모달 열기
         async function openStudentDetail(studentId) {
             try {
@@ -2145,33 +2328,33 @@
                     return;
                 }
                 const d = snap.data();
-                
+
                 // 현재 학생 ID 저장
                 currentStudentId = studentId;
-                
+
                 // 상단 기본 정보
                 document.getElementById('student-detail-name').textContent = `${d.name} (${d.id || studentId})`;
                 document.getElementById('detail-level').textContent = d.level ?? 0;
                 document.getElementById('detail-exp').textContent = d.exp ?? 0;
                 document.getElementById('detail-diamonds').textContent = d.diamonds ?? 0;
-                
+
                 // 능력치
                 const statsWrap = document.getElementById('student-detail-stats');
                 statsWrap.innerHTML = '';
-                ['stamina','attack','defense','luck'].forEach(k => {
+                ['stamina', 'attack', 'defense', 'luck'].forEach(k => {
                     const div = document.createElement('div');
                     div.className = 'flex justify-between text-gray-200';
                     div.innerHTML = `<span>${statLabels[k]}</span><span>${d[k] ?? 0}</span>`;
                     statsWrap.appendChild(div);
                 });
-                
+
                 studentDetailModal.classList.remove('hidden');
             } catch (err) {
                 console.error('학생 상세 보기 실패:', err);
                 showMessageModal('오류', '학생 상세 정보를 불러오는 중 오류가 발생했습니다.');
             }
         }
-        
+
         // 공통 지급 로직 세팅 함수
         function setupIncrement(section, field, firestoreKey) {
             const minusBtn = document.getElementById(`${section}-minus`);
@@ -2181,12 +2364,12 @@
             const cancelBtn = document.getElementById(`${section}-cancel`);
             const sectionDiv = document.getElementById(`${section}-give-section`);
             const openBtn = document.getElementById(`give-${section}-btn`);
-            
+
             // 열기
             openBtn.addEventListener("click", () => {
                 sectionDiv.classList.remove("hidden");
             });
-            
+
             // 증감
             minusBtn.addEventListener("click", () => {
                 input.value = Math.max(1, parseInt(input.value) - 1);
@@ -2194,7 +2377,7 @@
             plusBtn.addEventListener("click", () => {
                 input.value = parseInt(input.value) + 1;
             });
-            
+
             // 지급
             confirmBtn.addEventListener("click", async () => {
                 const amount = parseInt(input.value);
@@ -2202,7 +2385,7 @@
                 const studentRef = doc(db, `artifacts/${appId}/public/data/students`, currentStudentId);
                 await updateDoc(studentRef, { [firestoreKey]: increment(amount) });
                 showMessageModal("완료", `${field} ${amount} 지급 완료!`);
-                
+
                 // 지급 후 화면 값도 즉시 갱신
                 if (firestoreKey === "exp") {
                     document.getElementById("detail-exp").textContent =
@@ -2213,16 +2396,16 @@
                 } else if (firestoreKey === "growth_points") {
                     // 성장 포인트는 모달에 직접 표시하는 span이 없으면 생략 가능
                 }
-                
+
                 sectionDiv.classList.add("hidden");
             });
-            
+
             // 취소
             cancelBtn.addEventListener("click", () => {
                 sectionDiv.classList.add("hidden");
             });
         }
-        
+
         // 세트 초기화 (모달 로딩 후 실행)
         setupIncrement("exp", "경험치", "exp");
         setupIncrement("dia", "다이아", "diamonds");
@@ -2231,7 +2414,7 @@
         // 상위 탭 버튼
         const teacherTabQuestBtn = document.getElementById("teacher-tab-quest");
         const teacherQuestSection = document.getElementById("teacher-quest-section");
-        
+
         // 서브탭 버튼
         const questTabListBtn = document.getElementById("quest-tab-list");
         const questTabManageBtn = document.getElementById("quest-tab-manage");
@@ -2241,7 +2424,7 @@
         const questListSection = document.getElementById("quest-list-section");
         const questManageSection = document.getElementById("quest-manage-section");
         const questHistorySection = document.getElementById("quest-history-section");
-        
+
         // 교사 대시보드 탭 전환
         teacherTabQuestBtn.addEventListener("click", () => {
             document.querySelectorAll('#teacher-dashboard-sections > div').forEach(div => div.classList.add('hidden'));
@@ -2253,7 +2436,7 @@
             teacherTabQuestBtn.classList.remove('border-transparent', 'text-gray-400');
             teacherTabQuestBtn.classList.add('border-yellow-400', 'text-yellow-400');
         });
-        
+
         // 퀘스트 서브탭 전환
         function switchQuestSubTab(activeBtn, activeSection) {
             [questTabListBtn, questTabManageBtn, questTabHistoryBtn].forEach(btn => {
@@ -2262,11 +2445,11 @@
             });
             activeBtn.classList.remove('border-transparent', 'text-gray-400');
             activeBtn.classList.add('border-yellow-400', 'text-yellow-400');
-            
+
             [questListSection, questManageSection, questHistorySection].forEach(sec => sec.classList.add('hidden'));
             activeSection.classList.remove('hidden');
         }
-        
+
         questTabListBtn.addEventListener("click", () => switchQuestSubTab(questTabListBtn, questListSection));
         questTabManageBtn.addEventListener("click", () => switchQuestSubTab(questTabManageBtn, questManageSection));
         questTabHistoryBtn.addEventListener("click", () => switchQuestSubTab(questTabHistoryBtn, questHistorySection));
@@ -2276,22 +2459,22 @@
             switchQuestSubTab(questTabManageBtn, questManageSection);
             renderQuestStudentList(); // ✅ 학생 목록 불러오기 실행
         });
-        
+
         // 학생 목록 불러오기 함수
         async function renderQuestStudentList() {
             const container = document.getElementById("quest-student-list");
             container.innerHTML = "<p class='text-gray-400'>불러오는 중...</p>";
-            
+
             try {
                 const studentsRef = collection(db, `artifacts/${appId}/public/data/students`);
                 const snapshot = await getDocs(studentsRef);
-                
+
                 container.innerHTML = "";
                 if (snapshot.empty) {
                     container.innerHTML = "<p class='text-gray-400'>등록된 학생이 없습니다.</p>";
                     return;
                 }
-                
+
                 snapshot.forEach(docSnap => {
                     const s = docSnap.data();
                     const div = document.createElement("div");
@@ -2308,43 +2491,43 @@
                 container.innerHTML = "<p class='text-red-400'>학생 목록을 불러오는 중 오류가 발생했습니다.</p>";
             }
         }
-        
+
         // 전체 선택 버튼
         document.getElementById("select-all-students").addEventListener("click", () => {
             document.querySelectorAll(".quest-student-checkbox").forEach(cb => cb.checked = true);
         });
-        
+
         // 기간 체크박스
         document.getElementById("enable-period").addEventListener("change", (e) => {
             document.getElementById("quest-period-inputs").classList.toggle("hidden", !e.target.checked);
         });
-        
+
         // 퀘스트 등록
         document.getElementById("quest-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            
+
             const name = document.getElementById("quest-name").value.trim();
             const desc = document.getElementById("quest-desc").value.trim();
             const exp = parseInt(document.getElementById("reward-exp").value) || 0;
             const dia = parseInt(document.getElementById("reward-dia").value) || 0;
             const growth = parseInt(document.getElementById("reward-growth").value) || 0;
-            
+
             const assigned = Array.from(document.querySelectorAll(".quest-student-checkbox:checked"))
                 .map(cb => cb.value);
-            
+
             let startDate = null, endDate = null;
             if (document.getElementById("enable-period").checked) {
                 startDate = document.getElementById("quest-start").value || null;
                 endDate = document.getElementById("quest-end").value || null;
             }
-            
+
             const repeat = document.getElementById("quest-repeat").value;
-            
+
             if (!name || !desc) {
                 showMessageModal("오류", "퀘스트 이름과 설명을 입력하세요.");
                 return;
             }
-            
+
             try {
                 await addDoc(collection(db, `artifacts/${appId}/public/data/quests`), {
                     name,
