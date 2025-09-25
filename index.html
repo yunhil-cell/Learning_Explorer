@@ -703,8 +703,8 @@
 
         /** ========= KST(Asia/Seoul) 주기 유틸 ========= */
         const KST_OFFSET_MIN = 9 * 60; // UTC+9
-        //   const MIN_MS = 60 * 1000;
-        //   const DAY_MS = 24 * 60 * MIN_MS;          
+        const MIN_MS = 60 * 1000;
+        const DAY_MS = 24 * 60 * MIN_MS;
         const toKST = (d) => new Date(d.getTime() + KST_OFFSET_MIN * MIN_MS);
         const fromKST = (d) => new Date(d.getTime() - KST_OFFSET_MIN * MIN_MS);
         const startOfKSTDayUTC = (d) => {
@@ -846,19 +846,6 @@
                 if (!teacherDocSnap.exists()) {
                     await setDoc(teacherDocRef, {
                         password: 'superteacher'
-                    });
-                }
-
-                // Initialize a base quest in the database if it doesn't exist
-                const questDocRef = doc(db, `artifacts/${appId}/public/data/quests`, 'daily_diary_quest');
-                const questDocSnap = await getDoc(questDocRef);
-                if (!questDocSnap.exists()) {
-                    await setDoc(questDocRef, {
-                        title: "오늘의 성장일지 쓰기",
-                        description: "오늘 있었던 나의 성장을 간단히 기록해 보세요.",
-                        exp_reward: 20,
-                        gp_reward: 0,
-                        type: "daily"
                     });
                 }
 
@@ -1173,7 +1160,7 @@
                             const card = document.createElement('div');
                             card.className = 'bg-gray-700 rounded-lg p-4 space-y-2 mb-3';
                             card.innerHTML = `
-                            <h5 class="text-white font-semibold">${qd.name || '(제목 없음)'}</h5>
+                            <h5 class="text-white font-semibold">${qd.name || docSnap.id || '(제목 없음)'}</h5>
                             <p class="text-gray-300 text-sm">${qd.description || ''}</p>
                             <p class="text-gray-400 text-xs">보상: 경험치 ${expReward} · 다이아 ${diaReward} · 성장포인트 ${growthReward}</p>
                             <button class="complete-quest-btn w-full mt-2 px-3 py-1 bg-emerald-500 text-white rounded"
@@ -1256,7 +1243,7 @@
                 errorMsg.textContent = '부여된 퀘스트를 불러오는 중 오류가 발생했습니다.';
                 dailyQuestContainer.appendChild(errorMsg);
             }
-            
+
             // ===== 다음 초기화 타이머 (렌더 루프 끝에서 한 번만 세팅) =====
             try {
                 if (nearestResetUTC) {
@@ -2529,7 +2516,19 @@
             }
 
             try {
-                await addDoc(collection(db, `artifacts/${appId}/public/data/quests`), {
+                // 문서 id = 퀘스트 이름 (슬래시는 대시로 치환)
+                const questId = name.replace(/[\/]+/g, '-').trim();
+                if (!questId) {
+                    showMessageModal("오류", "유효한 퀘스트 이름이 아닙니다.");
+                    return;
+                }
+                const questRef = doc(db, `artifacts/${appId}/public/data/quests`, questId);
+                const existed = await getDoc(questRef);
+                if (existed.exists()) {
+                    showMessageModal("오류", "동일한 이름의 퀘스트가 이미 존재합니다.");
+                    return;
+                }
+                await setDoc(questRef, {
                     name,
                     description: desc,
                     rewards: { exp, dia, growth },
