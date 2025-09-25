@@ -1171,19 +1171,21 @@
                             dailyQuestContainer.appendChild(card);
 
                             // 완료 버튼 이벤트 (반복 주기 + 중복 클릭/중복 렌더 방지)
-                            (function attachCompleteHandler() {
+                            (async function attachCompleteHandler() {
                                 const btn = card.querySelector('.complete-quest-btn');
                                 if (!btn) return;
                                 // 반복 유형: 'daily' | 'weekly' | 'monthly' | 'none' (마스터 문서의 qd.repeat)
                                 const repeatType = qd?.repeat || 'none';
                                 const keyNow = currentPeriodKey(repeatType); // 반복 아닌 경우 null
 
-                                // 학생 문서에 저장된 현재 퀘스트 상태
-                                const studentQuest = (studentData.quests && studentData.quests[questId]) || null;
-                                const alreadyKey = studentQuest?.last_key || null;
+                                // ✅ student_quests에서 이번 주기의 완료 기록 유무로 결정
+                                const periodKey = keyNow || 'single';
+                                const sqId = `${userId}__${questId}__${periodKey}`;
+                                const sqRef = doc(db, `artifacts/${appId}/public/data/student_quests`, sqId);
+                                const sqSnap = await getDoc(sqRef);
+                                const alreadyCompleted = sqSnap.exists(); // 이번 주기에 이미 완료됨
+                                const available = !alreadyCompleted;
 
-                                // 이번 주기에 이미 완료했으면 비활성화
-                                const available = repeatType === 'none' ? !studentQuest?.completed_at : (alreadyKey !== keyNow);
                                 if (!available) {
                                     btn.disabled = true;
                                     btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -1202,16 +1204,24 @@
                                         const diaReward = Number(qd?.rewards?.dia || 0);
                                         const growthReward = Number(qd?.rewards?.growth || 0);
 
-                                        const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
-                                        const setObj = {
+                                        // ✅ student_quests 컬렉션에 (studentId, questId, period_key) 단위로 저장
+                                        const periodKey = keyNow || 'single';
+                                        const sqId = `${userId}__${questId}__${periodKey}`; // 충돌 방지용 합성키
+                                        const sqRef = doc(db, `artifacts/${appId}/public/data/student_quests`, sqId);
+                                        await setDoc(sqRef, {
+                                            student_id: userId,
+                                            quest_id: questId,
+                                            period_key: periodKey,
+                                            repeat: repeatType, // 'daily' | 'weekly' | 'monthly' | 'none'
+                                            status: 'completed', // (추후 승인 플로우를 넣으면 'submitted'부터 시작)
                                             completed_at: serverTimestamp(),
                                             description: qd?.description || '',
                                             rewards: { exp: expReward, dia: diaReward, growth: growthReward }
-                                        };
-                                        if (keyNow) setObj.last_key = keyNow; // ✅ 반복 퀘스트: 주기 키 저장
+                                        }, { merge: true });
 
+                                        // 보상은 현재 설계대로 즉시 지급(기존 동작 유지)
+                                        const studentRef = doc(db, `artifacts/${appId}/public/data/students`, userId);
                                         await updateDoc(studentRef, {
-                                            [`quests.${questId}`]: setObj,
                                             exp: increment(expReward),
                                             diamonds: increment(diaReward),
                                             growth_points: increment(growthReward)
@@ -1257,15 +1267,27 @@
                 }
             } catch { }
 
-            // 2) 완료한 퀘스트 (최근 3개, 아코디언, 더보기)
-            const questsObj = studentData.quests || {};
-            let completedQuests = Object.entries(questsObj).filter(([_, v]) => v?.completed_at);
+            // 2) 완료한 퀘스트 (최근 3개, 아코디언, 더보기) — ✅ student_quests 기준으로 전환
+            // Firestore에서 내 완료 이력을 최신순으로 가져오기
+            const sqCol = collection(db, `artifacts/${appId}/public/data/student_quests`);
+            const qCompleted = query(
+                sqCol,
+                where('student_id', '==', userId),
+                orderBy('completed_at', 'desc')
+            );
+            const sqSnap = await getDocs(qCompleted);
+            const completedQuests = [];
+            sqSnap.forEach(docSnap => {
+                const d = docSnap.data();
+                if (d?.status === 'completed') {
+                    completedQuests.push([d.quest_id, d]);
+                }
+            });
+
             if (completedQuests.length === 0) {
                 completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
                 return;
             }
-
-            completedQuests.sort((a, b) => b[1].completed_at.toDate() - a[1].completed_at.toDate());
 
             let visibleCount = 3;
             async function renderCompleted(list, count) {
@@ -1293,8 +1315,9 @@
                     }
 
                     const rewards = value.rewards || {};
-                    const date = value.completed_at.toDate().toLocaleString();
-
+                    const date = value.completed_at?.toDate
+                        ? value.completed_at.toDate().toLocaleString()
+                        : (value.completed_at ? new Date(value.completed_at).toLocaleString() : '');
                     const wrapper = document.createElement('div');
                     wrapper.className = 'bg-gray-700 rounded mb-2';
 
@@ -2516,7 +2539,7 @@
             }
 
             try {
-                // 문서 id = 퀘스트 이름 (슬래시는 대시로 치환)
+                // 문서 id = 퀘스트 이름 (슬래시 등 경로문자 치환)
                 const questId = name.replace(/[\/]+/g, '-').trim();
                 if (!questId) {
                     showMessageModal("오류", "유효한 퀘스트 이름이 아닙니다.");
