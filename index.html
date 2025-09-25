@@ -774,6 +774,17 @@
         }
         /** ========================================= */
 
+        function formatKST_YmdHMS(d = new Date()) {
+            const k = toKST(d);
+            const y = k.getFullYear();
+            const mo = String(k.getMonth() + 1).padStart(2, '0');
+            const da = String(k.getDate()).padStart(2, '0');
+            const hh = String(k.getHours()).padStart(2, '0');
+            const mm = String(k.getMinutes()).padStart(2, '0');
+            const ss = String(k.getSeconds()).padStart(2, '0');
+            return `${y}${mo}${da}${hh}${mm}${ss}`;
+        }
+
         // Initial stat values for new students
         const initialStats = {
             level: 1,
@@ -1208,6 +1219,7 @@
                                         const periodKey = keyNow || 'single';
                                         const sqId = `${userId}__${questId}__${periodKey}`; // 충돌 방지용 합성키
                                         const sqRef = doc(db, `artifacts/${appId}/public/data/student_quests`, sqId);
+                                        const clientNow = new Date();
                                         await setDoc(sqRef, {
                                             student_id: userId,
                                             quest_id: questId,
@@ -1215,6 +1227,7 @@
                                             repeat: repeatType, // 'daily' | 'weekly' | 'monthly' | 'none'
                                             status: 'completed', // (추후 승인 플로우를 넣으면 'submitted'부터 시작)
                                             completed_at: serverTimestamp(),
+                                            completed_at_client: clientNow.toISOString(),
                                             description: qd?.description || '',
                                             rewards: { exp: expReward, dia: diaReward, growth: growthReward }
                                         }, { merge: true });
@@ -1359,6 +1372,16 @@
                     if (d?.status === 'completed') {
                         completedQuests.push([d.quest_id, d]);
                     }
+                });
+                // 서버 timestamp가 아직 반영 전이면 completed_at_client로 즉시 정렬/표시
+                completedQuests.sort((a, b) => {
+                    const at = a[1].completed_at?.toDate
+                        ? a[1].completed_at.toDate().getTime()
+                        : (a[1].completed_at_client ? new Date(a[1].completed_at_client).getTime() : 0);
+                    const bt = b[1].completed_at?.toDate
+                        ? b[1].completed_at.toDate().getTime()
+                        : (b[1].completed_at_client ? new Date(b[1].completed_at_client).getTime() : 0);
+                    return bt - at;
                 });
                 if (completedQuests.length === 0) {
                     completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
@@ -2669,18 +2692,24 @@
             }
 
             try {
-                // 문서 id = 퀘스트 이름 (슬래시 등 경로문자 치환)
-                const questId = name.replace(/[\/]+/g, '-').trim();
-                if (!questId) {
+                // 문서 ID = "이름__YYYYMMDDHHmmss"(KST), 슬래시는 대시로 치환
+                const base = name.replace(/[\/]+/g, '-').trim();
+                const createdAtKST = formatKST_YmdHMS(new Date());
+                const questId = `${base}__${createdAtKST}`;
+                if (!base) {
                     showMessageModal("오류", "유효한 퀘스트 이름이 아닙니다.");
                     return;
                 }
-                const questRef = doc(db, `artifacts/${appId}/public/data/quests`, questId);
-                const existed = await getDoc(questRef);
-                if (existed.exists()) {
+                // 동일 이름 중복 차단 (name 필드로 검사)
+                const qRef = collection(db, `artifacts/${appId}/public/data/quests`);
+                const qDup = query(qRef, where('name', '==', name), limit(1));
+                const dupSnap = await getDocs(qDup);
+                if (!dupSnap.empty) {
                     showMessageModal("오류", "동일한 이름의 퀘스트가 이미 존재합니다.");
                     return;
                 }
+                // 생성
+                const questRef = doc(db, `artifacts/${appId}/public/data/quests`, questId);
                 await setDoc(questRef, {
                     name,
                     description: desc,
@@ -2689,7 +2718,8 @@
                     start_date: startDate,
                     end_date: endDate,
                     repeat,
-                    created_at: new Date()
+                    created_at: serverTimestamp(),
+                    created_at_kst: createdAtKST
                 });
                 showMessageModal("완료", "퀘스트가 등록되었습니다.");
                 e.target.reset();
