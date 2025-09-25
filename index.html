@@ -1228,7 +1228,16 @@
                                         });
 
                                         showMessageModal('완료', `${qd?.name || '퀘스트'}를 완료했습니다!`);
-                                        // 화면 갱신은 onSnapshot에서 자동 반영되도록, 여기서 수동 렌더 호출은 하지 않습니다.
+                                        // ✅ 완료 즉시 이력 새로고침
+                                        try { await refreshCompleted(); } catch (_) { }
+                                        // ✅ 단발성(반복 없음)은 현재 카드 제거(“완료 목록”으로 이동한 효과)
+                                        if ((qd?.repeat || 'none') === 'none') {
+                                            card.remove();
+                                        } else {
+                                            // 반복형은 버튼만 잠그고 그대로 유지
+                                            btn.textContent = '이번 주기는 완료됨';
+                                            btn.classList.add('opacity-50', 'cursor-not-allowed');
+                                        }
                                     } catch (err) {
                                         console.error('퀘스트 완료 처리 실패:', err);
                                         showMessageModal('오류', '퀘스트 완료 처리 중 문제가 발생했습니다.');
@@ -1238,9 +1247,7 @@
                                         return;
                                     }
 
-                                    // 성공 시 버튼 상태 고정
-                                    btn.textContent = '이번 주기는 완료됨';
-                                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                                    // 성공 시 버튼 상태는 위에서 처리됨
                                 });
                             })();
                         }
@@ -1267,28 +1274,7 @@
                 }
             } catch { }
 
-            // 2) 완료한 퀘스트 (최근 3개, 아코디언, 더보기) — ✅ student_quests 기준으로 전환
-            // Firestore에서 내 완료 이력을 최신순으로 가져오기
-            const sqCol = collection(db, `artifacts/${appId}/public/data/student_quests`);
-            const qCompleted = query(
-                sqCol,
-                where('student_id', '==', userId),
-                orderBy('completed_at', 'desc')
-            );
-            const sqSnap = await getDocs(qCompleted);
-            const completedQuests = [];
-            sqSnap.forEach(docSnap => {
-                const d = docSnap.data();
-                if (d?.status === 'completed') {
-                    completedQuests.push([d.quest_id, d]);
-                }
-            });
-
-            if (completedQuests.length === 0) {
-                completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
-                return;
-            }
-
+            // 2) 완료한 퀘스트 렌더러 — ✅ student_quests 기준 (재사용 가능)
             let visibleCount = 3;
             async function renderCompleted(list, count) {
                 completedQuestsContainer.innerHTML = '';
@@ -1358,8 +1344,30 @@
                 }
             }
 
-            // 최초 렌더 호출
-            renderCompleted(completedQuests, visibleCount);
+            // ✅ student_quests에서 이력 불러와 그리는 함수 (완료 직후에도 재호출 가능)
+            async function refreshCompleted() {
+                const sqCol = collection(db, `artifacts/${appId}/public/data/student_quests`);
+                const qCompleted = query(
+                    sqCol,
+                    where('student_id', '==', userId),
+                    orderBy('completed_at', 'desc')
+                );
+                const sqSnap = await getDocs(qCompleted);
+                const completedQuests = [];
+                sqSnap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    if (d?.status === 'completed') {
+                        completedQuests.push([d.quest_id, d]);
+                    }
+                });
+                if (completedQuests.length === 0) {
+                    completedQuestsContainer.innerHTML = '<p class="text-gray-400">아직 완료한 퀘스트가 없습니다.</p>';
+                    return;
+                }
+                await renderCompleted(completedQuests, visibleCount);
+            }
+            // 최초 1회 렌더
+            await refreshCompleted();
         }
 
         /**
@@ -2463,6 +2471,128 @@
         questTabListBtn.addEventListener("click", () => switchQuestSubTab(questTabListBtn, questListSection));
         questTabManageBtn.addEventListener("click", () => switchQuestSubTab(questTabManageBtn, questManageSection));
         questTabHistoryBtn.addEventListener("click", () => switchQuestSubTab(questTabHistoryBtn, questHistorySection));
+
+        // =========================
+        // 교사 대시보드: 퀘스트 목록 탭
+        // =========================
+        let unsubscribeQuestList = null;
+        async function renderQuestListTab() {
+            // 섹션 보장
+            if (!questListSection) return;
+            // 툴바/컨테이너가 없으면 생성
+            let toolbar = questListSection.querySelector('#quest-list-toolbar');
+            let container = questListSection.querySelector('#quest-list-container');
+            if (!toolbar) {
+                toolbar = document.createElement('div');
+                toolbar.id = 'quest-list-toolbar';
+                toolbar.className = 'mb-3 flex flex-wrap gap-2 items-center';
+                toolbar.innerHTML = `
+                    <input id="quest-list-search" type="text" placeholder="퀘스트 이름 검색" class="px-3 py-2 rounded bg-gray-800 text-white w-64" />
+                    <select id="quest-list-filter" class="px-3 py-2 rounded bg-gray-800 text-white">
+                        <option value="all">전체</option>
+                        <option value="none">단발</option>
+                        <option value="daily">일간</option>
+                        <option value="weekly">주간</option>
+                        <option value="monthly">월간</option>
+                    </select>
+                `;
+                questListSection.prepend(toolbar);
+            }
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'quest-list-container';
+                container.className = 'space-y-2';
+                questListSection.appendChild(container);
+            }
+
+            const searchInput = toolbar.querySelector('#quest-list-search');
+            const filterSelect = toolbar.querySelector('#quest-list-filter');
+
+            // 기존 구독 해제
+            if (typeof unsubscribeQuestList === 'function') {
+                unsubscribeQuestList();
+                unsubscribeQuestList = null;
+            }
+
+            const qRef = collection(db, `artifacts/${appId}/public/data/quests`);
+            const qBase = query(qRef, orderBy('name', 'asc'));
+            unsubscribeQuestList = onSnapshot(qBase, (snap) => {
+                const rows = [];
+                snap.forEach((docSnap) => {
+                    const d = docSnap.data();
+                    rows.push({
+                        id: docSnap.id,
+                        name: d?.name || docSnap.id,
+                        repeat: d?.repeat || 'none',
+                        rewards: d?.rewards || { exp: 0, dia: 0, growth: 0 },
+                        assigned_students: d?.assigned_students || []
+                    });
+                });
+
+                function applyRender() {
+                    const term = (searchInput.value || '').trim().toLowerCase();
+                    const type = filterSelect.value || 'all';
+                    const filtered = rows.filter(r => {
+                        const okName = !term || r.name.toLowerCase().includes(term);
+                        const okType = (type === 'all') || (r.repeat === type);
+                        return okName && okType;
+                    });
+
+                    if (filtered.length === 0) {
+                        container.innerHTML = '<p class="text-gray-400">등록된 퀘스트가 없습니다.</p>';
+                        return;
+                    }
+                    container.innerHTML = '';
+                    filtered.forEach(r => {
+                        const el = document.createElement('div');
+                        el.className = 'bg-gray-800 rounded-xl p-4 flex items-center justify-between';
+                        el.innerHTML = `
+                            <div class="min-w-0">
+                                <h4 class="text-white font-semibold truncate">${r.name}</h4>
+                                <p class="text-gray-400 text-sm mt-1">
+                                    유형: ${r.repeat === 'none' ? '단발' : r.repeat === 'daily' ? '일간' : r.repeat === 'weekly' ? '주간' : r.repeat === 'monthly' ? '월간' : r.repeat}
+                                    · 보상: EXP ${r.rewards.exp || 0}, DIA ${r.rewards.dia || 0}, 성장 ${r.rewards.growth || 0}
+                                    · 부여 학생 수: ${r.assigned_students.length}
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="quest-delete-btn px-3 py-1 rounded bg-red-600 text-white" data-id="${r.id}">삭제</button>
+                            </div>
+                        `;
+                        container.appendChild(el);
+                    });
+                }
+
+                applyRender();
+                searchInput.oninput = applyRender;
+                filterSelect.onchange = applyRender;
+            }, (err) => {
+                console.error('퀘스트 목록 구독 실패:', err);
+                container.innerHTML = '<p class="text-red-400">퀘스트 목록을 불러오는 중 오류가 발생했습니다.</p>';
+            });
+
+            // 삭제 이벤트 위임
+            container.addEventListener('click', async (e) => {
+                const btn = e.target.closest('.quest-delete-btn');
+                if (!btn) return;
+                const id = btn.getAttribute('data-id');
+                if (!id) return;
+                if (!confirm(`퀘스트 "${id}"을(를) 삭제하시겠습니까?`)) return;
+                try {
+                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/quests`, id));
+                    showMessageModal('완료', '퀘스트가 삭제되었습니다.');
+                } catch (err) {
+                    console.error('퀘스트 삭제 실패:', err);
+                    showMessageModal('오류', '퀘스트 삭제 중 문제가 발생했습니다.');
+                }
+            });
+        }
+
+        // 탭 진입 시 목록 렌더
+        questTabListBtn.addEventListener('click', () => {
+            switchQuestSubTab(questTabListBtn, questListSection);
+            renderQuestListTab();
+        });
 
         // 퀘스트 관리 탭 클릭 시 학생 목록 불러오기
         questTabManageBtn.addEventListener("click", () => {
