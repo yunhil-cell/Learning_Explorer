@@ -713,6 +713,18 @@
             return fromKST(k);
         };
 
+        // KST 시각을 "YYYYMMDDHHmmss"로 포맷 (문서 ID 생성 등에 사용)
+        function formatKST_YmdHMS(d = new Date()) {
+            const k = toKST(d);
+            const y = k.getFullYear();
+            const mo = String(k.getMonth() + 1).padStart(2, '0');
+            const da = String(k.getDate()).padStart(2, '0');
+            const hh = String(k.getHours()).padStart(2, '0');
+            const mm = String(k.getMinutes()).padStart(2, '0');
+            const ss = String(k.getSeconds()).padStart(2, '0');
+            return `${y}${mo}${da}${hh}${mm}${ss}`;
+        }
+
         // 주간: 월요일 0시 기준
         function nextDailyResetUTC(now = new Date()) {
             const tomorrowKST0UTC = new Date(startOfKSTDayUTC(now).getTime() + DAY_MS);
@@ -773,17 +785,6 @@
             return null;
         }
         /** ========================================= */
-
-        function formatKST_YmdHMS(d = new Date()) {
-            const k = toKST(d);
-            const y = k.getFullYear();
-            const mo = String(k.getMonth() + 1).padStart(2, '0');
-            const da = String(k.getDate()).padStart(2, '0');
-            const hh = String(k.getHours()).padStart(2, '0');
-            const mm = String(k.getMinutes()).padStart(2, '0');
-            const ss = String(k.getSeconds()).padStart(2, '0');
-            return `${y}${mo}${da}${hh}${mm}${ss}`;
-        }
 
         // Initial stat values for new students
         const initialStats = {
@@ -2665,26 +2666,24 @@
             document.getElementById("quest-period-inputs").classList.toggle("hidden", !e.target.checked);
         });
 
-        // 퀘스트 등록
-        document.getElementById("quest-form").addEventListener("submit", async (e) => {
+        // 퀘스트 등록: 문서 ID = "이름__YYYYMMDDHHmmss"(KST), 동일 name 중복 차단
+        document.getElementById("quest-form")?.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const form = e.currentTarget;
+            const name = (document.getElementById("quest-name")?.value || "").trim();
+            const desc = (document.getElementById("quest-desc")?.value || "").trim();
+            const exp = Number(document.getElementById("reward-exp")?.value || 0);
+            const dia = Number(document.getElementById("reward-dia")?.value || 0);
+            const growth = Number(document.getElementById("reward-growth")?.value || 0);
+            const repeat = (document.getElementById("quest-repeat")?.value || "none").trim();
 
-            const name = document.getElementById("quest-name").value.trim();
-            const desc = document.getElementById("quest-desc").value.trim();
-            const exp = parseInt(document.getElementById("reward-exp").value) || 0;
-            const dia = parseInt(document.getElementById("reward-dia").value) || 0;
-            const growth = parseInt(document.getElementById("reward-growth").value) || 0;
+            const enablePeriod = document.getElementById("enable-period")?.checked;
+            const startDate = enablePeriod ? (document.getElementById("quest-start")?.value || null) : null;
+            const endDate = enablePeriod ? (document.getElementById("quest-end")?.value || null) : null;
 
-            const assigned = Array.from(document.querySelectorAll(".quest-student-checkbox:checked"))
-                .map(cb => cb.value);
-
-            let startDate = null, endDate = null;
-            if (document.getElementById("enable-period").checked) {
-                startDate = document.getElementById("quest-start").value || null;
-                endDate = document.getElementById("quest-end").value || null;
-            }
-
-            const repeat = document.getElementById("quest-repeat").value;
+            // 체크된 학생 수집
+            const assigned = Array.from(document.querySelectorAll('#quest-student-list input[type="checkbox"]:checked'))
+                .map(chk => chk.value);
 
             if (!name || !desc) {
                 showMessageModal("오류", "퀘스트 이름과 설명을 입력하세요.");
@@ -2692,15 +2691,7 @@
             }
 
             try {
-                // 문서 ID = "이름__YYYYMMDDHHmmss"(KST), 슬래시는 대시로 치환
-                const base = name.replace(/[\/]+/g, '-').trim();
-                const createdAtKST = formatKST_YmdHMS(new Date());
-                const questId = `${base}__${createdAtKST}`;
-                if (!base) {
-                    showMessageModal("오류", "유효한 퀘스트 이름이 아닙니다.");
-                    return;
-                }
-                // 동일 이름 중복 차단 (name 필드로 검사)
+                // 동일 name 중복 차단
                 const qRef = collection(db, `artifacts/${appId}/public/data/quests`);
                 const qDup = query(qRef, where('name', '==', name), limit(1));
                 const dupSnap = await getDocs(qDup);
@@ -2708,7 +2699,15 @@
                     showMessageModal("오류", "동일한 이름의 퀘스트가 이미 존재합니다.");
                     return;
                 }
-                // 생성
+
+                // 문서 ID = "이름__YYYYMMDDHHmmss"(KST), 슬래시 등 경로문자 치환
+                const base = name.replace(/[\/]+/g, '-').trim();
+                const questId = `${base}__${formatKST_YmdHMS(new Date())}`;
+                if (!base) {
+                    showMessageModal("오류", "유효한 퀘스트 이름이 아닙니다.");
+                    return;
+                }
+
                 const questRef = doc(db, `artifacts/${appId}/public/data/quests`, questId);
                 await setDoc(questRef, {
                     name,
@@ -2719,11 +2718,15 @@
                     end_date: endDate,
                     repeat,
                     created_at: serverTimestamp(),
-                    created_at_kst: createdAtKST
+                    created_at_kst: formatKST_YmdHMS(new Date())
                 });
+
                 showMessageModal("완료", "퀘스트가 등록되었습니다.");
-                e.target.reset();
-                renderQuestStudentList(); // 체크박스 초기화
+                form.reset();
+                // 학생 목록 UI를 쓰고 계시면 갱신
+                if (typeof renderQuestStudentList === 'function') {
+                    try { await renderQuestStudentList(); } catch (_) { }
+                }
             } catch (err) {
                 console.error("퀘스트 등록 실패:", err);
                 showMessageModal("오류", "퀘스트 등록 중 문제가 발생했습니다.");
